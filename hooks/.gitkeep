@@ -1,0 +1,4 @@
+# TODO: Tambahkan custom hooks:
+# - useAuth.js (hook untuk authentication)
+# - usePrograms.js (hook untuk fetch programs)
+# - useAchievements.js (hook untuk fetch achievements)
