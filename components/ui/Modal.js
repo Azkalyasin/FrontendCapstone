@@ -12,20 +12,20 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }) {
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-black/50 transition-opacity"
+        className="fixed inset-0 bg-slate-900/45 transition-opacity"
         onClick={onClose}
       />
       
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
         <div 
-          className={`relative w-full border border-black bg-white shadow-none ${sizes[size]}`}
+          className={`relative w-full border border-slate-200 bg-white shadow-xl shadow-slate-900/10 ${sizes[size]}`}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
           {title && (
-            <div className="border-b border-black px-6 py-4">
-              <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+            <div className="border-b border-slate-200 bg-blue-50/70 px-6 py-4">
+              <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
             </div>
           )}
           

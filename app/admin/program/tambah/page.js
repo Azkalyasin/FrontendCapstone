@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
+import { DEFAULT_PROGRAMS, PROGRAMS_STORAGE_KEY, readStoredRecords, saveStoredRecords } from '@/lib/demo-data';
 
 export default function TambahProgramPage() {
   const router = useRouter();
@@ -20,6 +21,7 @@ export default function TambahProgramPage() {
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   const jenjangOptions = [
     { value: 'SD', label: 'SD' },
@@ -69,11 +71,23 @@ export default function TambahProgramPage() {
 
     setLoading(true);
 
-    // TODO: Replace with actual API call
-    setTimeout(() => {
-      console.log('Submit:', formData);
+    try {
+      const programs = readStoredRecords(PROGRAMS_STORAGE_KEY, DEFAULT_PROGRAMS);
+      const newProgram = {
+        ...formData,
+        id: `program-${Date.now()}`,
+        tingkat: formData.jenjang,
+        biaya: Number(formData.biaya),
+        durasi: 'Fleksibel',
+        kuota: 12,
+      };
+      saveStoredRecords(PROGRAMS_STORAGE_KEY, [newProgram, ...programs]);
       router.push('/admin/program');
-    }, 1000);
+    } catch (error) {
+      console.error('Program tidak dapat disimpan.', error);
+      setSubmitError('Program belum tersimpan. Penyimpanan browser mungkin penuh.');
+      setLoading(false);
+    }
   };
 
   return (
@@ -86,7 +100,7 @@ export default function TambahProgramPage() {
       <div className="mb-2">
         <Link 
           href="/admin/program"
-          className="flex items-center gap-1 text-xs text-gray-600 hover:text-black"
+          className="flex items-center gap-1 text-xs text-primary-700 hover:text-primary-900"
         >
           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -96,12 +110,13 @@ export default function TambahProgramPage() {
       </div>
 
       <div className="mb-2">
-        <h1 className="text-xl font-semibold text-gray-900">Tambah Program Belajar Baru</h1>
+        <h1 className="text-xl font-semibold text-slate-900">Tambah Program Belajar Baru</h1>
       </div>
 
       {/* Form */}
-      <div className="ml-1 w-[95%] border border-black bg-white px-4 py-[17px]">
+      <div className="ml-1 w-[95%] border border-slate-200 bg-white px-4 py-[17px]">
         <form onSubmit={handleSubmit} className="space-y-3">
+          {submitError && <p role="alert" className="border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">{submitError}</p>}
           {/* Nama Program */}
           <Input
             label="Nama Program"
@@ -166,7 +181,7 @@ export default function TambahProgramPage() {
           />
 
           {/* Actions */}
-          <div className="flex justify-end gap-3 border-t border-gray-300 pt-3">
+          <div className="flex justify-end gap-3 border-t border-slate-200 pt-3">
             <Button
               type="button"
               variant="outline"

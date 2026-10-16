@@ -34,25 +34,25 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-white">
-      <header className="mx-5 flex h-[58px] items-center gap-2 border-b border-black px-4">
-        <div className="relative h-5 w-5 border border-black" aria-hidden="true">
-          <span className="absolute left-1/2 top-1/2 h-px w-6 -translate-x-1/2 -translate-y-1/2 rotate-45 bg-black" />
-          <span className="absolute left-1/2 top-1/2 h-px w-6 -translate-x-1/2 -translate-y-1/2 -rotate-45 bg-black" />
+    <div className="flex min-h-screen flex-col bg-blue-50/50">
+      <header className="mx-5 flex h-[58px] items-center gap-2 border-b border-slate-200 bg-white px-4">
+        <div className="relative h-5 w-5 border border-primary-300 bg-primary-50" aria-hidden="true">
+          <span className="absolute left-1/2 top-1/2 h-px w-6 -translate-x-1/2 -translate-y-1/2 rotate-45 bg-primary-600" />
+          <span className="absolute left-1/2 top-1/2 h-px w-6 -translate-x-1/2 -translate-y-1/2 -rotate-45 bg-primary-600" />
         </div>
-        <span className="text-sm font-bold text-gray-900">Bimble Wanda</span>
+        <span className="text-sm font-bold text-slate-900">Bimble Wanda</span>
       </header>
 
       <main className="flex flex-1 items-center justify-center px-4 py-8">
-        <section className="-translate-y-3 w-full max-w-[230px] border border-black bg-white p-5">
+        <section className="-translate-y-3 w-full max-w-[230px] border border-slate-200 bg-white p-5 shadow-lg shadow-blue-900/5">
           <div className="mb-3 flex justify-center">
-            <div className="relative h-[34px] w-[34px] border border-black" aria-hidden="true">
-              <span className="absolute left-1/2 top-1/2 h-px w-12 -translate-x-1/2 -translate-y-1/2 rotate-45 bg-gray-500" />
-              <span className="absolute left-1/2 top-1/2 h-px w-12 -translate-x-1/2 -translate-y-1/2 -rotate-45 bg-gray-500" />
+            <div className="relative h-[34px] w-[34px] border border-primary-300 bg-primary-50" aria-hidden="true">
+              <span className="absolute left-1/2 top-1/2 h-px w-12 -translate-x-1/2 -translate-y-1/2 rotate-45 bg-primary-500" />
+              <span className="absolute left-1/2 top-1/2 h-px w-12 -translate-x-1/2 -translate-y-1/2 -rotate-45 bg-secondary-500" />
             </div>
           </div>
 
-          <h1 className="mb-4 text-center text-base font-semibold text-gray-900">
+          <h1 className="mb-4 text-center text-base font-semibold text-slate-900">
             Admin Login
           </h1>
 
@@ -81,18 +81,18 @@ export default function AdminLoginPage() {
             {/* Password */}
             <div>
               <div className="mb-0.5 flex items-center justify-between">
-                <label className="block text-[10px] font-medium leading-3 text-gray-900">
+                <label className="block text-[10px] font-medium leading-3 text-slate-700">
                   Password
                 </label>
                 <button
                   type="button"
-                  className="text-[10px] font-medium text-gray-900 underline"
+                  className="text-[10px] font-medium text-primary-700 underline hover:text-primary-900"
                 >
                   Forgot password?
                 </button>
               </div>
               <div className="relative">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-600">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
@@ -102,13 +102,13 @@ export default function AdminLoginPage() {
                   placeholder="Masukkan password Anda"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full border border-black bg-white py-1 pl-10 pr-10 text-xs focus:outline-none focus:ring-1 focus:ring-black"
+                  className="w-full border border-slate-300 bg-white py-1 pl-10 pr-10 text-xs focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-600 hover:text-black"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-500 hover:text-primary-700"
                 >
                   {showPassword ? (
                     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -131,9 +131,9 @@ export default function AdminLoginPage() {
                 id="remember"
                 checked={formData.rememberDevice}
                 onChange={(e) => setFormData({ ...formData, rememberDevice: e.target.checked })}
-                className="h-3.5 w-3.5 border-black text-black focus:ring-black"
+                className="h-3.5 w-3.5 border-slate-300 text-primary-600 focus:ring-primary-500"
               />
-              <label htmlFor="remember" className="ml-2 text-[10px] text-gray-900">
+              <label htmlFor="remember" className="ml-2 text-[10px] text-slate-700">
                 Remember this device
               </label>
             </div>

@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
+import { DEFAULT_PROGRAMS, PROGRAMS_STORAGE_KEY, readStoredRecords, saveStoredRecords } from '@/lib/demo-data';
 
 function EditProgramForm() {
   const router = useRouter();
@@ -22,6 +23,8 @@ function EditProgramForm() {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [initialError, setInitialError] = useState('');
+  const [submitError, setSubmitError] = useState('');
 
   const jenjangOptions = [
     { value: 'SD', label: 'SD' },
@@ -30,18 +33,27 @@ function EditProgramForm() {
   ];
 
   useEffect(() => {
-    // TODO: Replace with actual API call to fetch program data
-    setTimeout(() => {
-      // Mock data
-      setFormData({
-        nama: 'Bimbingan Intensif UTBK',
-        deskripsi: 'Persiapan masuk PTN favorit dengan materi komprehensif, try out rutin, dan evaluasi mendalam untuk memaksimalkan potensi siswa dalam menghadapi UTBK SNBT.',
-        jenjang: 'SMA',
-        biaya: '2500000',
-        jadwal: 'Senin - Jumat, 15:00 - 17:00',
-      });
+    try {
+      const programs = readStoredRecords(PROGRAMS_STORAGE_KEY, DEFAULT_PROGRAMS);
+      const program = programs.find((item) => String(item.id) === String(params.id))
+        || (String(params.id) === '1' ? DEFAULT_PROGRAMS[0] : null);
+      if (!program) {
+        setInitialError('Program tidak ditemukan. Program mungkin sudah dihapus.');
+      } else {
+        setFormData({
+          nama: program.nama,
+          deskripsi: program.deskripsi,
+          jenjang: program.tingkat || program.jenjang,
+          biaya: String(program.biaya),
+          jadwal: program.jadwal,
+        });
+      }
+    } catch (error) {
+      console.error('Gagal memuat data program.', error);
+      setInitialError('Data program gagal dimuat. Muat ulang halaman untuk mencoba kembali.');
+    } finally {
       setInitialLoading(false);
-    }, 500);
+    }
   }, [params.id]);
 
   const handleChange = (field, value) => {
@@ -85,11 +97,25 @@ function EditProgramForm() {
 
     setLoading(true);
 
-    // TODO: Replace with actual API call
-    setTimeout(() => {
-      console.log('Update:', formData);
+    try {
+      const programs = readStoredRecords(PROGRAMS_STORAGE_KEY, DEFAULT_PROGRAMS);
+      const currentProgram = programs.find((item) => String(item.id) === String(params.id));
+      const updatedProgram = {
+        ...(currentProgram || DEFAULT_PROGRAMS[0]),
+        ...formData,
+        tingkat: formData.jenjang,
+        biaya: Number(formData.biaya),
+      };
+      const updated = currentProgram
+        ? programs.map((item) => String(item.id) === String(params.id) ? updatedProgram : item)
+        : [updatedProgram, ...programs];
+      saveStoredRecords(PROGRAMS_STORAGE_KEY, updated);
       router.push('/admin/program');
-    }, 1000);
+    } catch (error) {
+      console.error('Perubahan program tidak dapat disimpan.', error);
+      setSubmitError('Perubahan belum tersimpan. Penyimpanan browser mungkin penuh.');
+      setLoading(false);
+    }
   };
 
   if (initialLoading) {
@@ -118,7 +144,7 @@ function EditProgramForm() {
       <div className="mb-2">
         <Link 
           href="/admin/program"
-          className="flex items-center gap-1 text-xs text-gray-600 hover:text-black"
+          className="flex items-center gap-1 text-xs text-primary-700 hover:text-primary-900"
         >
           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -128,13 +154,15 @@ function EditProgramForm() {
       </div>
 
       <div className="mb-2">
-        <h1 className="text-xl font-semibold text-gray-900">Edit Program Belajar</h1>
-        <p className="mt-1 text-xs text-gray-600">Perbarui informasi detail program belajar di bawah ini.</p>
+        <h1 className="text-xl font-semibold text-slate-900">Edit Program Belajar</h1>
+        <p className="mt-1 text-xs text-slate-500">Perbarui informasi detail program belajar di bawah ini.</p>
       </div>
 
+      {initialError && <div role="alert" className="mb-4 border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-700">{initialError}</div>}
       {/* Form */}
-      <div className="ml-1 w-[95%] border border-black bg-white px-4 py-[17px]">
+      {!initialError && <div className="ml-1 w-[95%] border border-slate-200 bg-white px-4 py-[17px]">
         <form onSubmit={handleSubmit} className="space-y-3">
+          {submitError && <p role="alert" className="border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">{submitError}</p>}
           {/* Nama Program */}
           <Input
             label="Nama Program"
@@ -199,7 +227,7 @@ function EditProgramForm() {
           />
 
           {/* Actions */}
-          <div className="flex justify-end gap-3 border-t border-gray-300 pt-3">
+          <div className="flex justify-end gap-3 border-t border-slate-200 pt-3">
             <Button
               type="button"
               variant="outline"
@@ -231,7 +259,7 @@ function EditProgramForm() {
             </Button>
           </div>
         </form>
-      </div>
+      </div>}
     </AdminLayout>
   );
 }
@@ -240,7 +268,7 @@ export default function EditProgramPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-[#f7f9f8] text-sm text-gray-600">
+        <div className="flex min-h-screen items-center justify-center bg-slate-50 text-sm text-slate-600">
           Memuat halaman...
         </div>
       }

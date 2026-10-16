@@ -12,7 +12,7 @@ export function Textarea({
   return (
     <div className={`w-full ${className}`}>
       {label && (
-        <label className="mb-0.5 block text-[10px] font-medium leading-3 text-gray-900">
+        <label className="mb-0.5 block text-[10px] font-medium leading-3 text-slate-700">
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}
         </label>
@@ -23,8 +23,8 @@ export function Textarea({
         placeholder={placeholder}
         rows={rows}
         className={`
-          w-full resize-y border border-black bg-white px-3 py-1.5 text-xs
-          focus:outline-none focus:ring-1 focus:ring-black
+          w-full resize-y border border-slate-300 bg-white px-3 py-1.5 text-xs
+          focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500
           ${error ? 'border-red-600' : ''}
           disabled:bg-gray-100 disabled:cursor-not-allowed
         `}

@@ -14,7 +14,7 @@ Frontend website untuk Bimble Wanda menggunakan Next.js 16 dengan App Router.
 Tema warna yang digunakan untuk mencerminkan profesionalisme dan keramahan bimbel:
 
 - **Primary (Blue)**: `#2563EB` - Trust, professional, education-focused
-- **Secondary (Orange)**: `#F97316` - Energetic, friendly, youth appeal
+- **Secondary (Amber)**: `#F59E0B` - Energetic, friendly, youth appeal
 - **Success**: `#10B981` - Positive feedback
 - **Danger**: `#EF4444` - Destructive actions
 - **Neutral**: Gray scale untuk text dan borders
@@ -28,12 +28,17 @@ frontend/
 │   │   ├── login/         # Admin login page
 │   │   ├── dashboard/     # Admin dashboard
 │   │   ├── program/       # Kelola program belajar (CRUD)
-│   │   ├── pendaftar/     # Data pendaftar (TODO)
-│   │   └── achievement/   # Kelola achievement (TODO)
+│   │   ├── pendaftar/     # Pencarian, status & export pendaftar
+│   │   └── achievement/   # Kelola achievement (CRUD)
+│   ├── program/           # Katalog program publik
+│   ├── achievement/       # Cerita prestasi publik
+│   ├── profil/            # Profil dan FAQ
+│   ├── daftar/            # Form minat pendaftaran
 │   ├── globals.css        # Global styles & CSS variables
 │   ├── layout.js          # Root layout
-│   └── page.js            # Landing page (TODO)
+│   └── page.js            # Landing page
 ├── components/
+│   ├── admin/             # Form pengelolaan achievement
 │   ├── ui/                # Reusable UI components
 │   │   ├── Button.js
 │   │   ├── Input.js
@@ -46,7 +51,7 @@ frontend/
 │       ├── AdminLayout.js
 │       ├── AdminSidebar.js
 │       └── PublicLayout.js
-└── docs/wireframes/       # Design wireframes (reference)
+└── lib/                   # Data demo dan browser storage
 ```
 
 ## Implemented Features
@@ -82,18 +87,25 @@ Berdasarkan wireframe yang sudah diimplementasikan:
    - Warning message
    - Cancel & confirm actions
 
-### 🚧 Pending Implementation
+### ✅ Website publik
 
-Halaman-halaman berikut sudah ada placeholder, menunggu wireframe:
+- Landing page dengan katalog ringkas, pencapaian, dan jadwal/investasi.
+- Katalog program dengan pencarian, filter jenjang, dan detail program.
+- Cerita prestasi dengan pencarian, filter kategori, dan detail.
+- Profil, pendekatan belajar, dan FAQ interaktif.
+- Form minat pendaftaran dengan validasi dan konfirmasi berhasil.
 
-- Dashboard admin (stats cards sudah ada)
-- Data Pendaftar (CRUD)
-- Kelola Achievement (CRUD)
-- Landing page public
-- Halaman Program & Jadwal (public view)
-- Halaman Achievement (public view)
-- Halaman Profil & Kontak
-- Halaman Daftar Online
+### ✅ Admin interaktif
+
+- Dashboard dengan ringkasan data, aktivitas pendaftaran, dan pintasan.
+- Pencarian program serta alur tambah, edit, dan hapus.
+- Pencarian pendaftar, filter status, pembaruan tindak lanjut, dan export CSV.
+- Kelola achievement: tambah, edit, hapus, filter, pencarian, detail, dan pratinjau foto.
+- Sidebar admin yang menyesuaikan ukuran layar.
+
+### ⚠️ Penyimpanan demo dan integrasi backend
+
+Data demo disimpan di `localStorage` browser agar alur UI dapat dicoba dan bertahan setelah halaman dimuat ulang. Data tersebut hanya tersedia di browser/perangkat yang sama dan belum tersimpan di server. Controller API backend untuk program, achievement, dan pendaftar masih berupa stub; autentikasi admin juga belum terintegrasi dengan backend.
 
 ## Running the Project
 
@@ -180,19 +192,13 @@ import { Modal } from '@/components/ui/Modal';
 
 ## Next Steps
 
-1. **Backend Integration**: Connect API endpoints untuk CRUD operations
-2. **Authentication**: Implement proper auth dengan JWT/session
-3. **Public Pages**: Implement landing page dan user-facing pages
-4. **Responsive**: Test dan improve mobile responsiveness
-5. **Additional Features**: Upload image, rich text editor, etc.
+1. Implementasi database dan controller API untuk program, achievement, dan pendaftar.
+2. Hubungkan layanan frontend ke API dan tambahkan autentikasi/token admin.
+3. Ganti data contoh dengan konten, jadwal, kontak, serta foto resmi Bimble Wanda.
+4. Tambahkan pengujian otomatis setelah backend tersedia.
 
 ## Wireframe Reference
 
-Wireframe design tersimpan di `docs/wireframes/`:
-- `login_admin_page.png`
-- `lihat_program_belajar.png`
-- `tambah_program_blajar.png`
-- `edit_program_belajar.png`
-- `hapus_program_blajar.png`
+Wireframe desain tersimpan di `../docs/wireframes/`.
 
 Implementasi sudah mengikuti design wireframe dengan color theme yang konsisten.
