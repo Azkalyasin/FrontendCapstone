@@ -1,32 +1,27 @@
-// Layout komponen untuk halaman admin
-// TODO: Tambahkan sidebar, header admin, dan logout button
+'use client';
 
-export default function AdminLayout({ children }) {
+import { AdminSidebar } from './AdminSidebar';
+
+export function AdminLayout({ children, title, description, action, showTopbar = true }) {
   return (
-    <div className="admin-layout" style={{ display: 'flex' }}>
-      <aside style={{ width: '250px', background: '#2c3e50', color: 'white', minHeight: '100vh', padding: '1rem' }}>
-        <h3>Admin Panel</h3>
-        {/* TODO: Tambahkan sidebar navigation */}
-        <nav>
-          <ul>
-            <li><a href="/admin/dashboard" style={{ color: 'white' }}>Dashboard</a></li>
-            <li><a href="/admin/program" style={{ color: 'white' }}>Program</a></li>
-            <li><a href="/admin/achievement" style={{ color: 'white' }}>Achievement</a></li>
-            <li><a href="/admin/pendaftar" style={{ color: 'white' }}>Pendaftar</a></li>
-          </ul>
-        </nav>
-      </aside>
+    <div className="flex min-h-screen bg-[#f7f9f8]">
+      <AdminSidebar />
       
-      <div style={{ flex: 1 }}>
-        <header style={{ background: '#ecf0f1', padding: '1rem' }}>
-          {/* TODO: Tambahkan user info dan logout button */}
-          <div>Admin User</div>
-        </header>
-        
-        <main>
+      <main className="min-w-0 flex-1">
+        {showTopbar && <div className="h-[52px] border-b border-black bg-white" />}
+        <div className={`mx-auto max-w-7xl px-4 pb-6 md:pl-8 md:pr-14 ${showTopbar ? 'pt-8' : 'pt-[54px]'}`}>
+          {(title || description || action) && (
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div>
+                {title && <h1 className="font-serif text-2xl font-bold text-black">{title}</h1>}
+                {description && <p className="mt-1 text-xs text-gray-600">{description}</p>}
+              </div>
+              {action && <div className="shrink-0">{action}</div>}
+            </div>
+          )}
           {children}
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }
