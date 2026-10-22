@@ -93,7 +93,8 @@ Berdasarkan wireframe yang sudah diimplementasikan:
 - Katalog program dengan pencarian, filter jenjang, dan detail program.
 - Cerita prestasi dengan pencarian, filter kategori, dan detail.
 - Profil, pendekatan belajar, dan FAQ interaktif.
-- Form minat pendaftaran dengan validasi dan konfirmasi berhasil.
+- Halaman Profil & Kontak mengikuti blok wireframe tentang kami, informasi kontak, peta lokasi, dan formulir pesan.
+- Formulir pendaftaran online dengan data siswa, kontak orang tua/wali, jenjang, validasi, dan konfirmasi berhasil.
 
 ### ✅ Admin interaktif
 
@@ -105,7 +106,7 @@ Berdasarkan wireframe yang sudah diimplementasikan:
 
 ### ⚠️ Penyimpanan demo dan integrasi backend
 
-Data demo disimpan di `localStorage` browser agar alur UI dapat dicoba dan bertahan setelah halaman dimuat ulang. Data tersebut hanya tersedia di browser/perangkat yang sama dan belum tersimpan di server. Controller API backend untuk program, achievement, dan pendaftar masih berupa stub; autentikasi admin juga belum terintegrasi dengan backend.
+Data demo disimpan di `localStorage` browser agar alur UI dapat dicoba dan bertahan setelah halaman dimuat ulang. Data tersebut hanya tersedia di browser/perangkat yang sama dan belum tersimpan di server. Pesan kontak dan pendaftaran belum dikirim ke tim. Alamat, telepon, email, dan peta lokasi sengaja dibiarkan kosong untuk dilengkapi dengan informasi resmi. Controller API backend untuk program, achievement, dan pendaftar masih berupa stub; autentikasi admin juga belum terintegrasi dengan backend.
 
 ## Running the Project
 

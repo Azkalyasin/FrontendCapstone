@@ -52,8 +52,8 @@ export default function DataPendaftarPage() {
 
   const exportCsv = () => {
     try {
-      const headers = ['Nama', 'Email', 'Telepon', 'Program', 'Jenjang', 'Status', 'Tanggal', 'Catatan'];
-      const rows = visibleRegistrations.map((item) => [item.nama, item.email, item.telepon, item.program, item.jenjang, item.status, item.tanggal, item.pesan]);
+      const headers = ['Nama', 'Tempat Lahir', 'Tanggal Lahir', 'Jenis Kelamin', 'Alamat', 'Nama Orang Tua/Wali', 'Email', 'Telepon', 'Program', 'Jenjang', 'Status', 'Tanggal', 'Catatan'];
+      const rows = visibleRegistrations.map((item) => [item.nama, item.tempatLahir, item.tanggalLahir, item.jenisKelamin, item.alamat, item.namaOrangTua, item.email, item.telepon, item.program, item.jenjang, item.status, item.tanggal, item.pesan]);
       const csv = [headers, ...rows].map((row) => row.map(escapeCsv).join(',')).join('\r\n');
       const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' });
       const url = URL.createObjectURL(blob);
@@ -106,7 +106,7 @@ export default function DataPendaftarPage() {
             <tbody className="divide-y divide-slate-100">
               {visibleRegistrations.map((item) => (
                 <tr key={item.id} className="transition hover:bg-slate-50">
-                  <td className="px-4 py-3"><p className="text-xs font-semibold text-slate-800">{item.nama}</p><p className="mt-1 text-[10px] text-slate-500">{item.email} · {item.telepon}</p></td>
+                  <td className="px-4 py-3"><p className="text-xs font-semibold text-slate-800">{item.nama}</p><p className="mt-1 text-[10px] text-slate-500">{item.email ? `${item.email} · ` : ''}{item.telepon}</p>{item.namaOrangTua && <p className="mt-1 text-[10px] text-slate-400">Wali: {item.namaOrangTua}</p>}{(item.tempatLahir || item.tanggalLahir || item.jenisKelamin || item.alamat) && <details className="mt-2 text-[10px] text-slate-500"><summary className="cursor-pointer font-semibold text-primary-700">Detail siswa</summary><div className="mt-1 space-y-1 leading-4">{(item.tempatLahir || item.tanggalLahir) && <p>Tempat/tanggal lahir: {[item.tempatLahir, item.tanggalLahir].filter(Boolean).join(', ')}</p>}{item.jenisKelamin && <p>Jenis kelamin: {item.jenisKelamin}</p>}{item.alamat && <p>Alamat: {item.alamat}</p>}</div></details>}</td>
                   <td className="px-4 py-3"><p className="text-xs font-medium text-slate-700">{item.program}</p><p className="mt-1 text-[10px] text-slate-500">{item.jenjang}</p></td>
                   <td className="px-4 py-3 text-xs text-slate-500">{item.tanggal}</td>
                   <td className="px-4 py-3"><span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${item.status === 'Baru' ? 'bg-amber-50 text-amber-800' : item.status === 'Selesai' ? 'bg-emerald-50 text-emerald-800' : 'bg-blue-50 text-primary-800'}`}>{item.status}</span></td>
@@ -121,7 +121,7 @@ export default function DataPendaftarPage() {
         <div className="mt-5 space-y-3 md:hidden">
           {visibleRegistrations.map((item) => (
             <article key={item.id} className="rounded-2xl border border-slate-200 p-4">
-              <div className="flex items-start justify-between gap-3"><div><h3 className="text-sm font-semibold text-slate-900">{item.nama}</h3><p className="mt-1 text-[11px] text-slate-500">{item.email} · {item.telepon}</p></div><span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${item.status === 'Baru' ? 'bg-amber-50 text-amber-800' : item.status === 'Selesai' ? 'bg-emerald-50 text-emerald-800' : 'bg-blue-50 text-primary-800'}`}>{item.status}</span></div>
+              <div className="flex items-start justify-between gap-3"><div><h3 className="text-sm font-semibold text-slate-900">{item.nama}</h3><p className="mt-1 text-[11px] text-slate-500">{item.email ? `${item.email} · ` : ''}{item.telepon}</p>{item.namaOrangTua && <p className="mt-1 text-[10px] text-slate-400">Wali: {item.namaOrangTua}</p>}{(item.tempatLahir || item.tanggalLahir || item.jenisKelamin || item.alamat) && <details className="mt-2 text-[10px] text-slate-500"><summary className="cursor-pointer font-semibold text-primary-700">Detail siswa</summary><div className="mt-1 space-y-1 leading-4">{(item.tempatLahir || item.tanggalLahir) && <p>Tempat/tanggal lahir: {[item.tempatLahir, item.tanggalLahir].filter(Boolean).join(', ')}</p>}{item.jenisKelamin && <p>Jenis kelamin: {item.jenisKelamin}</p>}{item.alamat && <p>Alamat: {item.alamat}</p>}</div></details>}</div><span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${item.status === 'Baru' ? 'bg-amber-50 text-amber-800' : item.status === 'Selesai' ? 'bg-emerald-50 text-emerald-800' : 'bg-blue-50 text-primary-800'}`}>{item.status}</span></div>
               <p className="mt-3 text-xs font-medium text-slate-700">{item.program} · {item.jenjang}</p>
               <div className="mt-3 flex items-center justify-between"><span className="text-[10px] text-slate-400">{item.tanggal}</span><label className="sr-only" htmlFor={`mobile-status-${item.id}`}>Ubah status untuk {item.nama}</label><select id={`mobile-status-${item.id}`} value={item.status} onChange={(event) => updateStatus(item.id, event.target.value)} className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs">{statusOptions.map((status) => <option key={status}>{status}</option>)}</select></div>
             </article>

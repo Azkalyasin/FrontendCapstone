@@ -11,7 +11,8 @@ export default function PublicLayout({ children }) {
     { label: 'Beranda', href: '/' },
     { label: 'Program', href: '/program' },
     { label: 'Prestasi', href: '/achievement' },
-    { label: 'Tentang Kami', href: '/profil' },
+    { label: 'Profil', href: '/profil' },
+    { label: 'Kontak', href: '/profil#kontak' },
   ];
 
   return (
@@ -30,7 +31,7 @@ export default function PublicLayout({ children }) {
 
           <nav className="hidden items-center gap-1 md:flex" aria-label="Navigasi utama">
             {links.map((link) => {
-              const active = pathname === link.href;
+              const active = pathname === link.href || (pathname === '/profil' && link.href === '/profil#kontak');
               return (
                 <Link
                   key={link.href}
@@ -69,7 +70,7 @@ export default function PublicLayout({ children }) {
                   key={link.href}
                   href={link.href}
                   onClick={() => setMenuOpen(false)}
-                  className={`rounded-xl px-4 py-3 text-sm font-medium ${pathname === link.href ? 'bg-primary-50 text-primary-800' : 'text-slate-600 hover:bg-slate-50'}`}
+                  className={`rounded-xl px-4 py-3 text-sm font-medium ${pathname === link.href || (pathname === '/profil' && link.href === '/profil#kontak') ? 'bg-primary-50 text-primary-800' : 'text-slate-600 hover:bg-slate-50'}`}
                 >
                   {link.label}
                 </Link>
@@ -100,7 +101,8 @@ export default function PublicLayout({ children }) {
             <div className="mt-4 flex flex-col gap-3 text-sm text-slate-400">
               <Link className="transition hover:text-white" href="/program">Program belajar</Link>
               <Link className="transition hover:text-white" href="/achievement">Prestasi siswa</Link>
-              <Link className="transition hover:text-white" href="/profil">Tentang kami</Link>
+              <Link className="transition hover:text-white" href="/profil">Profil</Link>
+              <Link className="transition hover:text-white" href="/profil#kontak">Kontak</Link>
             </div>
           </div>
           <div>
