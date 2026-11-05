@@ -3,22 +3,24 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import PublicLayout from '@/components/layout/PublicLayout';
-import { DEFAULT_PROGRAMS, formatRupiah, PROGRAMS_STORAGE_KEY, readStoredRecords } from '@/lib/demo-data';
+import { formatRupiah } from '@/lib/format';
+import { getAllPrograms } from '@/services/programService';
 
 const levels = ['Semua', 'SD', 'SMP', 'SMA', 'Semua jenjang'];
 
 export default function ProgramPage() {
-  const [programs, setPrograms] = useState(DEFAULT_PROGRAMS);
+  const [programs, setPrograms] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [level, setLevel] = useState('Semua');
   const [query, setQuery] = useState('');
   const [selectedProgram, setSelectedProgram] = useState(null);
 
   useEffect(() => {
-    try {
-      setPrograms(readStoredRecords(PROGRAMS_STORAGE_KEY, DEFAULT_PROGRAMS));
-    } catch (error) {
-      console.error('Gagal memuat daftar program belajar.', error);
-    }
+    getAllPrograms()
+      .then(setPrograms)
+      .catch((error) => setLoadError(error.message))
+      .finally(() => setLoading(false));
   }, []);
 
   const filteredPrograms = useMemo(() => {
@@ -56,7 +58,7 @@ export default function ProgramPage() {
         <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h2 className="text-xl font-bold text-slate-950">Temukan kelasmu</h2>
-            <p className="mt-1 text-sm text-slate-500">{filteredPrograms.length} program tersedia</p>
+            <p className="mt-1 text-sm text-slate-500">{loading ? 'Memuat program...' : loadError ? <span className="text-rose-600">{loadError}</span> : `${filteredPrograms.length} program tersedia`}</p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <label className="relative block sm:w-64">

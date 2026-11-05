@@ -1,23 +1,24 @@
-// TODO: Service untuk authentication
-// import apiClient from '@/lib/api';
+import apiClient, { clearToken, setToken } from '@/lib/api';
 
-// Login
-export const login = async (username, password) => {
-  // TODO: Implementasi login
-  // return apiClient.post('/auth/login', { username, password });
-  throw new Error('Login belum diimplementasikan');
+export const login = async (username, password, remember = false) => {
+  const res = await apiClient.post('/auth/login', { username, password });
+  setToken(res.data.token, remember);
+  return res.data.user;
 };
 
-// Logout
 export const logout = async () => {
-  // TODO: Implementasi logout
-  // localStorage.removeItem('token');
-  throw new Error('Logout belum diimplementasikan');
+  try {
+    await apiClient.post('/auth/logout', undefined, { auth: true });
+  } catch {
+    // tetap logout di sisi browser walau request gagal
+  } finally {
+    clearToken();
+  }
 };
 
-// Get profile
-export const getProfile = async () => {
-  // TODO: Implementasi get profile
-  // return apiClient.get('/auth/profile');
-  throw new Error('Get profile belum diimplementasikan');
-};
+export const getProfile = async () => (await apiClient.get('/auth/profile', { auth: true })).data;
+
+export const changePassword = async (passwordLama, passwordBaru) =>
+  apiClient.put('/auth/password', { passwordLama, passwordBaru }, { auth: true });
+
+export const getStats = async () => (await apiClient.get('/stats', { auth: true })).data;

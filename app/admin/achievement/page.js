@@ -4,12 +4,12 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Modal } from '@/components/ui/Modal';
-import { ACHIEVEMENTS_STORAGE_KEY, DEFAULT_ACHIEVEMENTS, readStoredRecords, saveStoredRecords } from '@/lib/demo-data';
+import { deleteAchievement, getAllAchievements } from '@/services/achievementService';
 
 const categories = ['Semua', 'Akademik', 'Olahraga', 'Seni & Bahasa', 'Lainnya'];
 
 export default function AchievementAdminPage() {
-  const [achievements, setAchievements] = useState(DEFAULT_ACHIEVEMENTS);
+  const [achievements, setAchievements] = useState([]);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('Semua');
   const [selected, setSelected] = useState(null);
@@ -18,12 +18,9 @@ export default function AchievementAdminPage() {
   const [notice, setNotice] = useState('');
 
   useEffect(() => {
-    try {
-      setAchievements(readStoredRecords(ACHIEVEMENTS_STORAGE_KEY, DEFAULT_ACHIEVEMENTS));
-    } catch (readError) {
-      console.error('Gagal memuat daftar achievement admin.', readError);
-      setError('Daftar achievement tidak dapat dimuat. Muat ulang halaman untuk mencoba kembali.');
-    }
+    getAllAchievements()
+      .then(setAchievements)
+      .catch((readError) => setError(`Daftar achievement tidak dapat dimuat: ${readError.message}`));
   }, []);
 
   const filteredAchievements = useMemo(() => {
@@ -35,18 +32,16 @@ export default function AchievementAdminPage() {
     });
   }, [achievements, category, query]);
 
-  const removeAchievement = () => {
+  const removeAchievement = async () => {
     if (!selected) return;
     try {
-      const updated = achievements.filter((item) => String(item.id) !== String(selected.id));
-      saveStoredRecords(ACHIEVEMENTS_STORAGE_KEY, updated);
-      setAchievements(updated);
+      await deleteAchievement(selected.id);
+      setAchievements((current) => current.filter((item) => String(item.id) !== String(selected.id)));
       setSelected(null);
-      setNotice('Achievement berhasil dihapus dari daftar demo.');
+      setNotice('Achievement berhasil dihapus.');
       setError('');
     } catch (saveError) {
-      console.error('Gagal menghapus achievement.', saveError);
-      setError('Achievement belum dapat dihapus. Penyimpanan browser mungkin penuh atau tidak tersedia.');
+      setError(`Achievement belum dapat dihapus: ${saveError.message}`);
     }
   };
 

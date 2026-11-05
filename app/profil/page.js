@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import PublicLayout from '@/components/layout/PublicLayout';
-import { CONTACT_MESSAGES_STORAGE_KEY, readStoredRecords, saveStoredRecords } from '@/lib/demo-data';
+import { kirimPesan } from '@/services/pesanService';
 import { ClockIcon, MailIcon, PinIcon, TelegramIcon, WhatsAppIcon } from '@/components/ui/Icons';
 import { SITE, formatPhone, hasTelegram, hasWhatsApp, telegramLink, whatsappLink } from '@/lib/site-config';
 
@@ -38,18 +38,6 @@ export default function ProfilPage() {
 
   const composeText = () => `Halo ${SITE.name}, saya ${form.nama.trim()}.\n\n${form.pesan.trim()}\n\nKontak saya: ${form.kontak.trim()}`;
 
-  const saveLocal = (channel) => {
-    try {
-      const messages = readStoredRecords(CONTACT_MESSAGES_STORAGE_KEY, []);
-      saveStoredRecords(CONTACT_MESSAGES_STORAGE_KEY, [
-        { ...form, channel, id: `contact-${Date.now()}`, tanggal: new Date().toISOString().slice(0, 10) },
-        ...messages,
-      ]);
-    } catch (error) {
-      console.error('Pesan kontak tidak dapat disimpan di perangkat ini.', error);
-    }
-  };
-
   // Membuka WhatsApp admin dengan pesan yang sudah terisi otomatis.
   const sendViaWhatsApp = () => {
     setFormError('');
@@ -58,12 +46,11 @@ export default function ProfilPage() {
     if (error) return setFormError(error);
     const link = whatsappLink(composeText());
     if (!link) return setFormError('Nomor WhatsApp admin belum diatur.');
-    saveLocal('whatsapp');
     window.open(link, '_blank', 'noopener,noreferrer');
     setStatus({ tone: 'success', text: 'WhatsApp dibuka di tab baru. Tekan "Kirim" di WhatsApp untuk mengirim pesan Anda.' });
   };
 
-  // Meneruskan pesan ke admin lewat bot Telegram (route /api/kontak).
+  // Simpan pesan di backend; backend meneruskannya ke admin lewat bot Telegram (jika dikonfigurasi).
   const sendViaTelegram = async (event) => {
     event.preventDefault();
     setFormError('');
@@ -73,25 +60,15 @@ export default function ProfilPage() {
 
     setSending(true);
     try {
-      const response = await fetch('/api/kontak', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, website: event.currentTarget.website?.value || '' }),
-      });
-      const result = await response.json().catch(() => ({}));
-      if (response.ok && result.ok) {
-        saveLocal('telegram');
-        setStatus({ tone: 'success', text: 'Pesan terkirim ke admin melalui Telegram. Kami akan segera menghubungi Anda.' });
-        setForm({ nama: '', kontak: '', pesan: '' });
-      } else if (result.configured === false && hasTelegram) {
-        saveLocal('telegram-manual');
-        setStatus({ tone: 'info', text: 'Bot Telegram belum aktif. Silakan lanjutkan chat langsung ke admin kami di Telegram.', link: telegramLink() });
-      } else {
-        setFormError(result.error || 'Pesan belum terkirim. Silakan coba lagi atau gunakan WhatsApp.');
-      }
+      const result = await kirimPesan({ ...form, website: event.currentTarget.website?.value || '' });
+      setForm({ nama: '', kontak: '', pesan: '' });
+      setStatus(
+        result.telegram
+          ? { tone: 'success', text: 'Pesan terkirim ke admin melalui Telegram. Kami akan segera menghubungi Anda.' }
+          : { tone: 'success', text: 'Pesan Anda sudah kami terima dan akan segera dibalas.', ...(hasTelegram ? { link: telegramLink(), linkText: 'Butuh jawaban cepat? Chat di Telegram →' } : {}) },
+      );
     } catch (err) {
-      console.error(err);
-      setFormError('Koneksi bermasalah. Silakan coba lagi atau gunakan WhatsApp.');
+      setFormError(err.message || 'Pesan belum terkirim. Silakan coba lagi atau gunakan WhatsApp.');
     } finally {
       setSending(false);
     }
@@ -176,7 +153,7 @@ export default function ProfilPage() {
               {status && (
                 <div role="status" className={`mt-4 rounded-2xl border px-4 py-3 text-sm leading-6 ${status.tone === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-sky-200 bg-sky-50 text-sky-800'}`}>
                   {status.text}
-                  {status.link && <a href={status.link} target="_blank" rel="noopener noreferrer" className="ml-1 font-semibold underline underline-offset-2">Buka Telegram →</a>}
+                  {status.link && <a href={status.link} target="_blank" rel="noopener noreferrer" className="ml-1 font-semibold underline underline-offset-2">{status.linkText || 'Buka Telegram →'}</a>}
                 </div>
               )}
               {formError && <p role="alert" className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{formError}</p>}

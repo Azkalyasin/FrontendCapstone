@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import PublicLayout from '@/components/layout/PublicLayout';
 import { AwardIcon, TeacherIcon, TrendIcon, UsersIcon } from '@/components/ui/Icons';
-import { DEFAULT_PROGRAMS, readStoredRecords, PROGRAMS_STORAGE_KEY, formatRupiah } from '@/lib/demo-data';
+import { formatRupiah } from '@/lib/format';
+import { getAllPrograms } from '@/services/programService';
 
 const highlights = [
   { value: '95%', label: 'lulus PTN', Icon: TrendIcon, tone: 'bg-blue-500/15 text-blue-300' },
@@ -14,14 +15,12 @@ const highlights = [
 ];
 
 export default function HomePage() {
-  const [programs, setPrograms] = useState(DEFAULT_PROGRAMS);
+  const [programs, setPrograms] = useState([]);
 
   useEffect(() => {
-    try {
-      setPrograms(readStoredRecords(PROGRAMS_STORAGE_KEY, DEFAULT_PROGRAMS));
-    } catch (error) {
-      console.error('Gagal memuat program belajar dari penyimpanan lokal.', error);
-    }
+    getAllPrograms()
+      .then(setPrograms)
+      .catch((error) => console.error('Gagal memuat program belajar.', error));
   }, []);
 
   return (

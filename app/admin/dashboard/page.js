@@ -3,15 +3,9 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
-import {
-  ACHIEVEMENTS_STORAGE_KEY,
-  DEFAULT_ACHIEVEMENTS,
-  DEFAULT_PROGRAMS,
-  DEFAULT_REGISTRATIONS,
-  PROGRAMS_STORAGE_KEY,
-  readStoredRecords,
-  REGISTRATIONS_STORAGE_KEY,
-} from '@/lib/demo-data';
+import { getAllAchievements } from '@/services/achievementService';
+import { getAllPendaftar } from '@/services/pendaftarService';
+import { getAllPrograms } from '@/services/programService';
 
 const periods = [
   { label: '7 hari', days: 7 },
@@ -28,22 +22,21 @@ function isoDate(date) {
 
 export default function AdminDashboardPage() {
   const [period, setPeriod] = useState(7);
-  const [registrations, setRegistrations] = useState(DEFAULT_REGISTRATIONS);
-  const [programs, setPrograms] = useState(DEFAULT_PROGRAMS);
-  const [achievements, setAchievements] = useState(DEFAULT_ACHIEVEMENTS);
+  const [registrations, setRegistrations] = useState([]);
+  const [programs, setPrograms] = useState([]);
+  const [achievements, setAchievements] = useState([]);
   const [loadError, setLoadError] = useState('');
   const [today, setToday] = useState(null);
 
   useEffect(() => {
     setToday(new Date());
-    try {
-      setRegistrations(readStoredRecords(REGISTRATIONS_STORAGE_KEY, DEFAULT_REGISTRATIONS));
-      setPrograms(readStoredRecords(PROGRAMS_STORAGE_KEY, DEFAULT_PROGRAMS));
-      setAchievements(readStoredRecords(ACHIEVEMENTS_STORAGE_KEY, DEFAULT_ACHIEVEMENTS));
-    } catch (error) {
-      console.error('Gagal memuat ringkasan dashboard.', error);
-      setLoadError('Beberapa data dashboard tidak dapat dimuat dari browser ini.');
-    }
+    Promise.all([getAllPendaftar(), getAllPrograms(), getAllAchievements()])
+      .then(([pendaftar, programList, achievementList]) => {
+        setRegistrations(pendaftar);
+        setPrograms(programList);
+        setAchievements(achievementList);
+      })
+      .catch((error) => setLoadError(`Beberapa data dashboard tidak dapat dimuat: ${error.message}`));
   }, []);
 
   const recentRegistrations = useMemo(() => {
@@ -80,7 +73,7 @@ export default function AdminDashboardPage() {
     <AdminLayout title="Selamat datang kembali 👋" description="Ringkasan aktivitas Bimble Wanda hari ini.">
       {loadError && <p role="alert" className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{loadError}</p>}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-blue-100 bg-gradient-to-r from-primary-50 via-white to-amber-50 p-4 sm:px-5">
-        <div><p className="text-sm font-semibold text-slate-900">Mode pratinjau interaktif</p><p className="mt-1 text-xs text-slate-500">Data saat ini tersimpan di browser ini sambil menunggu integrasi backend.</p></div>
+        <div><p className="text-sm font-semibold text-slate-900">Terhubung ke database</p><p className="mt-1 text-xs text-slate-500">Semua perubahan langsung tersimpan di server dan tampil di situs publik.</p></div>
         <Link href="/" target="_blank" className="rounded-full border border-white bg-white px-4 py-2 text-xs font-semibold text-primary-800 shadow-sm transition hover:bg-primary-50">Lihat situs publik ↗</Link>
       </div>
 

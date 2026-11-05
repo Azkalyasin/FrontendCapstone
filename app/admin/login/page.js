@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { login } from '@/services/authService';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 
@@ -21,16 +22,20 @@ export default function AdminLoginPage() {
     setError('');
     setLoading(true);
 
-    // TODO: Replace with actual API call
-    setTimeout(() => {
-      if (formData.username && formData.password) {
-        // Simulate successful login
-        router.push('/admin/program');
-      } else {
-        setError('Username dan password harus diisi');
-      }
+    if (!formData.username.trim() || !formData.password) {
+      setError('Username dan password harus diisi');
       setLoading(false);
-    }, 1000);
+      return;
+    }
+
+    try {
+      await login(formData.username.trim(), formData.password, formData.rememberDevice);
+      const next = new URLSearchParams(window.location.search).get('next');
+      router.replace(next && next.startsWith('/admin') ? next : '/admin/dashboard');
+    } catch (err) {
+      setError(err.message || 'Login gagal');
+      setLoading(false);
+    }
   };
 
   return (

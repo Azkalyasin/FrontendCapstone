@@ -5,7 +5,8 @@ import { useEffect, useState } from 'react';
 import PublicLayout from '@/components/layout/PublicLayout';
 import { TelegramIcon, WhatsAppIcon } from '@/components/ui/Icons';
 import { SITE, hasTelegram, hasWhatsApp, telegramLink, whatsappLink } from '@/lib/site-config';
-import { DEFAULT_PROGRAMS, DEFAULT_REGISTRATIONS, PROGRAMS_STORAGE_KEY, REGISTRATIONS_STORAGE_KEY, readStoredRecords, saveStoredRecords } from '@/lib/demo-data';
+import { getAllPrograms } from '@/services/programService';
+import { submitPendaftaran } from '@/services/pendaftarService';
 
 const initialForm = {
   nama: '',
@@ -38,19 +39,20 @@ function confirmationText(form) {
 const inputClass = 'w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-primary-400 focus:ring-4 focus:ring-primary-100';
 
 export default function DaftarPage() {
-  const [programs, setPrograms] = useState(DEFAULT_PROGRAMS);
+  const [programs, setPrograms] = useState([]);
+  const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
-    try {
-      setPrograms(readStoredRecords(PROGRAMS_STORAGE_KEY, DEFAULT_PROGRAMS));
-    } catch (error) {
-      console.error('Gagal memuat pilihan program untuk pendaftaran.', error);
-      setMessage('Pilihan program gagal dimuat. Silakan muat ulang halaman.');
-    }
+    getAllPrograms()
+      .then(setPrograms)
+      .catch((error) => {
+        console.error('Gagal memuat pilihan program untuk pendaftaran.', error);
+        setMessage('Pilihan program gagal dimuat. Silakan muat ulang halaman.');
+      });
   }, []);
 
   const handleJenjangChange = (event) => {
@@ -63,7 +65,7 @@ export default function DaftarPage() {
     }));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     setMessage('');
 
@@ -80,26 +82,16 @@ export default function DaftarPage() {
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
 
+    setSubmitting(true);
     try {
-      const registrations = readStoredRecords(REGISTRATIONS_STORAGE_KEY, DEFAULT_REGISTRATIONS);
-      const newRegistration = {
-        ...form,
-        email: '',
-        id: `registration-${Date.now()}`,
-        status: 'Baru',
-        tanggal: new Date().toISOString().slice(0, 10),
-      };
-      saveStoredRecords(REGISTRATIONS_STORAGE_KEY, [newRegistration, ...registrations]);
+      // Backend menyimpan data & mengirim notifikasi Telegram ke admin (jika dikonfigurasi).
+      await submitPendaftaran(form);
       setSubmitted(true);
-      // Notifikasi ke admin via bot Telegram (tidak menghalangi alur jika belum dikonfigurasi).
-      fetch('/api/kontak', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'pendaftaran', data: form }),
-      }).catch(() => {});
+      window.scrollTo({ top: 0 });
     } catch (error) {
-      console.error('Pendaftaran tidak dapat disimpan di perangkat ini.', error);
-      setMessage('Pendaftaran belum tersimpan. Coba kembali atau gunakan browser lain.');
+      setMessage(error.message || 'Pendaftaran belum terkirim. Silakan coba lagi.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -212,7 +204,7 @@ export default function DaftarPage() {
 
             <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <Link href="/" className="inline-flex items-center justify-center rounded-full border border-slate-200 px-6 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">Batal</Link>
-              <button type="submit" className="inline-flex items-center justify-center gap-2 rounded-full bg-primary-700 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-primary-700/15 transition hover:-translate-y-0.5 hover:bg-primary-800">Daftar sekarang <span aria-hidden="true">→</span></button>
+              <button type="submit" disabled={submitting} className="inline-flex items-center justify-center gap-2 rounded-full bg-primary-700 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-primary-700/15 transition hover:-translate-y-0.5 hover:bg-primary-800 disabled:cursor-wait disabled:opacity-70">{submitting ? 'Mengirim...' : <>Daftar sekarang <span aria-hidden="true">→</span></>}</button>
             </div>
             <p className="mt-4 text-center text-[11px] leading-5 text-slate-400">Setelah mendaftar, Anda dapat langsung mengonfirmasi ke admin via WhatsApp atau Telegram.</p>
           </form>

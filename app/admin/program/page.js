@@ -6,7 +6,7 @@ import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Button } from '@/components/ui/Button';
 import { Table } from '@/components/ui/Table';
 import { Modal } from '@/components/ui/Modal';
-import { DEFAULT_PROGRAMS, PROGRAMS_STORAGE_KEY, readStoredRecords, saveStoredRecords } from '@/lib/demo-data';
+import { deleteProgram, getAllPrograms } from '@/services/programService';
 
 export default function ProgramBelajarPage() {
   const router = useRouter();
@@ -16,15 +16,12 @@ export default function ProgramBelajarPage() {
   const [programError, setProgramError] = useState('');
   const [notice, setNotice] = useState('');
 
-  const [programs, setPrograms] = useState(DEFAULT_PROGRAMS);
+  const [programs, setPrograms] = useState([]);
 
   useEffect(() => {
-    try {
-      setPrograms(readStoredRecords(PROGRAMS_STORAGE_KEY, DEFAULT_PROGRAMS));
-    } catch (error) {
-      console.error('Gagal memuat daftar program admin.', error);
-      setProgramError('Daftar program gagal dimuat. Muat ulang halaman untuk mencoba kembali.');
-    }
+    getAllPrograms()
+      .then(setPrograms)
+      .catch((error) => setProgramError(`Daftar program gagal dimuat: ${error.message}`));
   }, []);
 
   const filteredPrograms = useMemo(() => {
@@ -32,19 +29,17 @@ export default function ProgramBelajarPage() {
     return programs.filter((program) => `${program.nama} ${program.deskripsi} ${program.tingkat || program.jenjang} ${program.jadwal}`.toLowerCase().includes(normalizedQuery));
   }, [programs, query]);
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!selectedProgram) return;
     try {
-      const updated = programs.filter((program) => String(program.id) !== String(selectedProgram.id));
-      saveStoredRecords(PROGRAMS_STORAGE_KEY, updated);
-      setPrograms(updated);
+      await deleteProgram(selectedProgram.id);
+      setPrograms((current) => current.filter((program) => String(program.id) !== String(selectedProgram.id)));
       setShowDeleteModal(false);
       setSelectedProgram(null);
       setNotice('Program berhasil dihapus.');
       setProgramError('');
     } catch (error) {
-      console.error('Gagal menghapus program.', error);
-      setProgramError('Program belum dapat dihapus. Penyimpanan browser mungkin penuh.');
+      setProgramError(`Program belum dapat dihapus: ${error.message}`);
     }
   };
 

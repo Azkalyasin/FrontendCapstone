@@ -1,23 +1,41 @@
-// TODO: Custom hook untuk authentication
-// Hook ini akan mengelola state authentication dan menyediakan fungsi login/logout
+'use client';
 
-// import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { getToken } from '@/lib/api';
+import * as authService from '@/services/authService';
 
-export const useAuth = () => {
-  // TODO: Implementasi useAuth hook
-  // const [user, setUser] = useState(null);
-  // const [loading, setLoading] = useState(true);
-  
-  // useEffect(() => {
-  //   // Check if user is logged in
-  //   // Fetch profile from API or localStorage
-  // }, []);
+/**
+ * Mengelola sesi admin. Jika `required` true dan belum login,
+ * pengguna diarahkan ke /admin/login.
+ */
+export const useAuth = ({ required = false } = {}) => {
+  const router = useRouter();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // return { user, loading, login, logout, isAuthenticated: !!user };
-  
-  return {
-    user: null,
-    loading: false,
-    isAuthenticated: false,
-  };
+  useEffect(() => {
+    let active = true;
+    if (!getToken()) {
+      setLoading(false);
+      if (required) router.replace(`/admin/login?next=${encodeURIComponent(window.location.pathname)}`);
+      return undefined;
+    }
+    authService
+      .getProfile()
+      .then((profile) => active && setUser(profile))
+      .catch(() => active && setUser(null)) // 401 sudah ditangani apiClient (redirect ke login)
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, [required, router]);
+
+  const logout = useCallback(async () => {
+    await authService.logout();
+    setUser(null);
+    router.replace('/admin/login');
+  }, [router]);
+
+  return { user, loading, logout, isAuthenticated: Boolean(user) };
 };

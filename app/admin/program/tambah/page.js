@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
-import { DEFAULT_PROGRAMS, PROGRAMS_STORAGE_KEY, readStoredRecords, saveStoredRecords } from '@/lib/demo-data';
+import { createProgram } from '@/services/programService';
 
 export default function TambahProgramPage() {
   const router = useRouter();
@@ -72,20 +72,18 @@ export default function TambahProgramPage() {
     setLoading(true);
 
     try {
-      const programs = readStoredRecords(PROGRAMS_STORAGE_KEY, DEFAULT_PROGRAMS);
-      const newProgram = {
-        ...formData,
-        id: `program-${Date.now()}`,
+      await createProgram({
+        nama: formData.nama,
+        deskripsi: formData.deskripsi,
+        jadwal: formData.jadwal,
         tingkat: formData.jenjang,
         biaya: Number(formData.biaya),
         durasi: 'Fleksibel',
         kuota: 12,
-      };
-      saveStoredRecords(PROGRAMS_STORAGE_KEY, [newProgram, ...programs]);
+      });
       router.push('/admin/program');
     } catch (error) {
-      console.error('Program tidak dapat disimpan.', error);
-      setSubmitError('Program belum tersimpan. Penyimpanan browser mungkin penuh.');
+      setSubmitError(`Program belum tersimpan: ${error.message}`);
       setLoading(false);
     }
   };

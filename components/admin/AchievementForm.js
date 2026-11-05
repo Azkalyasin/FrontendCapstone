@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AdminLayout } from '@/components/layout/AdminLayout';
-import { ACHIEVEMENTS_STORAGE_KEY, DEFAULT_ACHIEVEMENTS, readStoredRecords, saveStoredRecords } from '@/lib/demo-data';
+import { createAchievement, getAchievementById, updateAchievement } from '@/services/achievementService';
 
 const emptyAchievement = {
   namaSiswa: '',
@@ -33,27 +33,27 @@ export function AchievementForm({ achievementId }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(isEditing);
   const [missingAchievement, setMissingAchievement] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!isEditing) return;
-    try {
-      const achievements = readStoredRecords(ACHIEVEMENTS_STORAGE_KEY, DEFAULT_ACHIEVEMENTS);
-      const record = achievements.find((item) => String(item.id) === String(achievementId));
-      if (!record) {
-        setMissingAchievement(true);
-      } else {
+    getAchievementById(achievementId)
+      .then((record) => {
         setForm({
           ...emptyAchievement,
-          ...record,
-          tanggal: record.tanggal || `${record.tahun || 2026}-01-01`,
+          namaSiswa: record.namaSiswa || '',
+          judul: record.judul || '',
+          kategori: record.kategori || '',
+          deskripsi: record.deskripsi || '',
+          foto: record.foto || '',
+          tanggal: record.tanggal || `${record.tahun || new Date().getFullYear()}-01-01`,
         });
-      }
-    } catch (readError) {
-      console.error('Gagal memuat prestasi yang akan diedit.', readError);
-      setError('Data prestasi tidak dapat dimuat. Coba muat ulang halaman.');
-    } finally {
-      setLoading(false);
-    }
+      })
+      .catch((readError) => {
+        if (readError.status === 404) setMissingAchievement(true);
+        else setError(`Data prestasi tidak dapat dimuat: ${readError.message}`);
+      })
+      .finally(() => setLoading(false));
   }, [achievementId, isEditing]);
 
   const handlePhoto = async (event) => {
@@ -66,7 +66,7 @@ export function AchievementForm({ achievementId }) {
       return;
     }
     if (file.size > 1024 * 1024) {
-      setError('Ukuran foto maksimal 1 MB untuk penyimpanan demo di browser.');
+      setError('Ukuran foto maksimal 1 MB.');
       event.target.value = '';
       return;
     }
@@ -79,7 +79,7 @@ export function AchievementForm({ achievementId }) {
     }
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     setError('');
     if (!form.namaSiswa.trim() || !form.judul.trim() || !form.kategori || !form.deskripsi.trim() || !form.tanggal) {
@@ -87,20 +87,22 @@ export function AchievementForm({ achievementId }) {
       return;
     }
     try {
-      const achievements = readStoredRecords(ACHIEVEMENTS_STORAGE_KEY, DEFAULT_ACHIEVEMENTS);
+      setSaving(true);
       const record = {
-        ...form,
-        id: isEditing ? achievementId : `achievement-${Date.now()}`,
+        namaSiswa: form.namaSiswa,
+        judul: form.judul,
+        kategori: form.kategori,
+        deskripsi: form.deskripsi,
+        tanggal: form.tanggal,
         tahun: Number(form.tanggal.slice(0, 4)),
+        foto: form.foto || '',
       };
-      const updated = isEditing
-        ? achievements.map((item) => String(item.id) === String(achievementId) ? record : item)
-        : [record, ...achievements];
-      saveStoredRecords(ACHIEVEMENTS_STORAGE_KEY, updated);
+      if (isEditing) await updateAchievement(achievementId, record);
+      else await createAchievement(record);
       router.push('/admin/achievement');
     } catch (saveError) {
-      console.error('Prestasi tidak dapat disimpan di perangkat ini.', saveError);
-      setError('Prestasi belum tersimpan. Ruang penyimpanan browser mungkin penuh.');
+      setError(`Prestasi belum tersimpan: ${saveError.message}`);
+      setSaving(false);
     }
   };
 
@@ -120,7 +122,7 @@ export function AchievementForm({ achievementId }) {
       {missingAchievement ? (
         <div className="rounded-3xl border border-amber-200 bg-amber-50 p-6">
           <p className="font-semibold text-amber-900">Data prestasi tidak ditemukan.</p>
-          <p className="mt-1 text-sm text-amber-800">Data mungkin sudah dihapus atau belum tersimpan pada browser ini.</p>
+          <p className="mt-1 text-sm text-amber-800">Data mungkin sudah dihapus.</p>
           <Link href="/admin/achievement" className="mt-4 inline-flex text-sm font-semibold text-amber-900 underline">Kembali ke daftar prestasi</Link>
         </div>
       ) : (
@@ -148,7 +150,7 @@ export function AchievementForm({ achievementId }) {
           {error && <p role="alert" className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p>}
           <div className="mt-7 flex flex-wrap justify-end gap-3 border-t border-slate-100 pt-5">
             <Link href="/admin/achievement" className="rounded-full border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">Batal</Link>
-            <button type="submit" className="rounded-full bg-primary-700 px-6 py-2.5 text-sm font-semibold text-white shadow-md shadow-primary-700/15 transition hover:bg-primary-800">{isEditing ? 'Simpan perubahan' : 'Simpan achievement'} <span aria-hidden="true">→</span></button>
+            <button type="submit" disabled={saving} className="rounded-full bg-primary-700 px-6 py-2.5 text-sm font-semibold text-white shadow-md shadow-primary-700/15 transition hover:bg-primary-800 disabled:cursor-wait disabled:opacity-70">{isEditing ? 'Simpan perubahan' : 'Simpan achievement'} <span aria-hidden="true">→</span></button>
           </div>
         </form>
       )}

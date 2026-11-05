@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
-import { DEFAULT_PROGRAMS, PROGRAMS_STORAGE_KEY, readStoredRecords, saveStoredRecords } from '@/lib/demo-data';
+import { getProgramById, updateProgram } from '@/services/programService';
 
 function EditProgramForm() {
   const router = useRouter();
@@ -33,27 +33,20 @@ function EditProgramForm() {
   ];
 
   useEffect(() => {
-    try {
-      const programs = readStoredRecords(PROGRAMS_STORAGE_KEY, DEFAULT_PROGRAMS);
-      const program = programs.find((item) => String(item.id) === String(params.id))
-        || (String(params.id) === '1' ? DEFAULT_PROGRAMS[0] : null);
-      if (!program) {
-        setInitialError('Program tidak ditemukan. Program mungkin sudah dihapus.');
-      } else {
+    getProgramById(params.id)
+      .then((program) => {
         setFormData({
           nama: program.nama,
-          deskripsi: program.deskripsi,
-          jenjang: program.tingkat || program.jenjang,
-          biaya: String(program.biaya),
-          jadwal: program.jadwal,
+          deskripsi: program.deskripsi || '',
+          jenjang: program.tingkat || '',
+          biaya: String(program.biaya ?? ''),
+          jadwal: program.jadwal || '',
         });
-      }
-    } catch (error) {
-      console.error('Gagal memuat data program.', error);
-      setInitialError('Data program gagal dimuat. Muat ulang halaman untuk mencoba kembali.');
-    } finally {
-      setInitialLoading(false);
-    }
+      })
+      .catch((error) => {
+        setInitialError(error.status === 404 ? 'Program tidak ditemukan. Program mungkin sudah dihapus.' : `Data program gagal dimuat: ${error.message}`);
+      })
+      .finally(() => setInitialLoading(false));
   }, [params.id]);
 
   const handleChange = (field, value) => {
@@ -98,22 +91,16 @@ function EditProgramForm() {
     setLoading(true);
 
     try {
-      const programs = readStoredRecords(PROGRAMS_STORAGE_KEY, DEFAULT_PROGRAMS);
-      const currentProgram = programs.find((item) => String(item.id) === String(params.id));
-      const updatedProgram = {
-        ...(currentProgram || DEFAULT_PROGRAMS[0]),
-        ...formData,
+      await updateProgram(params.id, {
+        nama: formData.nama,
+        deskripsi: formData.deskripsi,
+        jadwal: formData.jadwal,
         tingkat: formData.jenjang,
         biaya: Number(formData.biaya),
-      };
-      const updated = currentProgram
-        ? programs.map((item) => String(item.id) === String(params.id) ? updatedProgram : item)
-        : [updatedProgram, ...programs];
-      saveStoredRecords(PROGRAMS_STORAGE_KEY, updated);
+      });
       router.push('/admin/program');
     } catch (error) {
-      console.error('Perubahan program tidak dapat disimpan.', error);
-      setSubmitError('Perubahan belum tersimpan. Penyimpanan browser mungkin penuh.');
+      setSubmitError(`Perubahan belum tersimpan: ${error.message}`);
       setLoading(false);
     }
   };

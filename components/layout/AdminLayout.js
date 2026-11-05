@@ -2,14 +2,27 @@
 
 import { useState } from 'react';
 import { AdminSidebar } from './AdminSidebar';
+import { useAuth } from '@/hooks/useAuth';
 
 export function AdminLayout({ children, title, description, action, showTopbar = true }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, loading, logout } = useAuth({ required: true });
+
+  if (loading || !user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <div className="flex items-center gap-3 text-sm text-slate-500">
+          <span className="h-5 w-5 animate-spin rounded-full border-2 border-primary-200 border-t-primary-700" aria-hidden="true" />
+          Memeriksa sesi admin...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-slate-50">
       {mobileMenuOpen && <button type="button" aria-label="Tutup menu" onClick={() => setMobileMenuOpen(false)} className="fixed inset-0 z-40 bg-slate-950/40 md:hidden" />}
-      <AdminSidebar mobileOpen={mobileMenuOpen} onNavigate={() => setMobileMenuOpen(false)} />
+      <AdminSidebar mobileOpen={mobileMenuOpen} onNavigate={() => setMobileMenuOpen(false)} onLogout={logout} user={user} />
       
       <main className="min-w-0 flex-1">
         <div className={`${showTopbar ? 'flex h-[52px] border-b border-slate-200' : 'flex h-12 md:hidden'} sticky top-0 z-30 items-center gap-3 bg-white px-4`}>

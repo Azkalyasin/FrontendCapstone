@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { WhatsAppIcon } from '@/components/ui/Icons';
 import { whatsappLink } from '@/lib/site-config';
-import { DEFAULT_REGISTRATIONS, readStoredRecords, REGISTRATIONS_STORAGE_KEY, saveStoredRecords } from '@/lib/demo-data';
+import { getAllPendaftar, updateStatusPendaftar } from '@/services/pendaftarService';
 
 const statusOptions = ['Baru', 'Dihubungi', 'Selesai'];
 const filters = ['Semua', ...statusOptions];
@@ -15,19 +15,16 @@ function escapeCsv(value) {
 }
 
 export default function DataPendaftarPage() {
-  const [registrations, setRegistrations] = useState(DEFAULT_REGISTRATIONS);
+  const [registrations, setRegistrations] = useState([]);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('Semua');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
 
   useEffect(() => {
-    try {
-      setRegistrations(readStoredRecords(REGISTRATIONS_STORAGE_KEY, DEFAULT_REGISTRATIONS));
-    } catch (readError) {
-      console.error('Gagal memuat daftar pendaftar.', readError);
-      setError('Data pendaftar tidak dapat dimuat. Muat ulang halaman untuk mencoba kembali.');
-    }
+    getAllPendaftar()
+      .then(setRegistrations)
+      .catch((readError) => setError(`Data pendaftar tidak dapat dimuat: ${readError.message}`));
   }, []);
 
   const visibleRegistrations = useMemo(() => {
@@ -39,16 +36,14 @@ export default function DataPendaftarPage() {
     });
   }, [filter, query, registrations]);
 
-  const updateStatus = (registrationId, status) => {
+  const updateStatus = async (registrationId, status) => {
     try {
-      const updated = registrations.map((item) => String(item.id) === String(registrationId) ? { ...item, status } : item);
-      saveStoredRecords(REGISTRATIONS_STORAGE_KEY, updated);
-      setRegistrations(updated);
+      await updateStatusPendaftar(registrationId, status);
+      setRegistrations((current) => current.map((item) => String(item.id) === String(registrationId) ? { ...item, status } : item));
       setError('');
       setNotice('Status pendaftar berhasil diperbarui.');
     } catch (saveError) {
-      console.error('Gagal memperbarui status pendaftar.', saveError);
-      setError('Status belum diperbarui. Penyimpanan browser mungkin penuh.');
+      setError(`Status belum diperbarui: ${saveError.message}`);
     }
   };
 

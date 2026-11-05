@@ -2,22 +2,23 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import PublicLayout from '@/components/layout/PublicLayout';
-import { ACHIEVEMENTS_STORAGE_KEY, DEFAULT_ACHIEVEMENTS, readStoredRecords } from '@/lib/demo-data';
+import { getAllAchievements } from '@/services/achievementService';
 
 const categories = ['Semua', 'Akademik', 'Olahraga', 'Seni & Bahasa'];
 
 export default function AchievementPage() {
-  const [achievements, setAchievements] = useState(DEFAULT_ACHIEVEMENTS);
+  const [achievements, setAchievements] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [category, setCategory] = useState('Semua');
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState(null);
 
   useEffect(() => {
-    try {
-      setAchievements(readStoredRecords(ACHIEVEMENTS_STORAGE_KEY, DEFAULT_ACHIEVEMENTS));
-    } catch (error) {
-      console.error('Gagal memuat cerita prestasi siswa.', error);
-    }
+    getAllAchievements()
+      .then(setAchievements)
+      .catch((error) => setLoadError(error.message))
+      .finally(() => setLoading(false));
   }, []);
 
   const filteredAchievements = useMemo(() => {
@@ -51,7 +52,7 @@ export default function AchievementPage() {
 
       <section className="mx-auto max-w-7xl px-5 py-12 sm:px-8 sm:py-16">
         <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 lg:flex-row lg:items-center lg:justify-between">
-          <div><h2 className="text-xl font-bold text-slate-950">Kisah para siswa</h2><p className="mt-1 text-sm text-slate-500">{filteredAchievements.length} cerita prestasi</p></div>
+          <div><h2 className="text-xl font-bold text-slate-950">Kisah para siswa</h2><p className="mt-1 text-sm text-slate-500">{loading ? 'Memuat cerita prestasi...' : loadError ? <span className="text-rose-600">{loadError}</span> : `${filteredAchievements.length} cerita prestasi`}</p></div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <label className="relative block sm:w-64">
               <span className="sr-only">Cari prestasi</span>

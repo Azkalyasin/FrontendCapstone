@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-export function AdminSidebar({ mobileOpen = false, onNavigate = () => {} }) {
+export function AdminSidebar({ mobileOpen = false, onNavigate = () => {}, onLogout = () => {}, user = null }) {
   const pathname = usePathname();
   
   const menuItems = [
@@ -73,16 +73,22 @@ export function AdminSidebar({ mobileOpen = false, onNavigate = () => {} }) {
       </nav>
 
       <div className="border-t border-slate-200 px-3 py-3">
-        <Link
-          href="/admin/login"
-          onClick={onNavigate}
-          className="flex items-center gap-2 px-2 py-2 text-xs text-slate-700 transition-colors hover:bg-rose-50 hover:text-rose-700"
+        {user && (
+          <div className="mb-2 px-2">
+            <p className="truncate text-xs font-semibold text-slate-800">{user.name || user.username}</p>
+            <p className="truncate text-[10px] text-slate-500">@{user.username}</p>
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={() => { onNavigate(); onLogout(); }}
+          className="flex w-full items-center gap-2 px-2 py-2 text-xs text-slate-700 transition-colors hover:bg-rose-50 hover:text-rose-700"
         >
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" aria-hidden="true">
             <path d="M10 17l5-5-5-5m5 5H3m9-9h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7" />
           </svg>
           <span className="font-medium">Keluar</span>
-        </Link>
+        </button>
       </div>
     </aside>
   );
