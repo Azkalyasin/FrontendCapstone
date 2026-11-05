@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useState } from 'react';
 import PublicLayout from '@/components/layout/PublicLayout';
 import { CONTACT_MESSAGES_STORAGE_KEY, readStoredRecords, saveStoredRecords } from '@/lib/demo-data';
+import { ClockIcon, MailIcon, PinIcon, TelegramIcon, WhatsAppIcon } from '@/components/ui/Icons';
+import { SITE, formatPhone, hasTelegram, hasWhatsApp, telegramLink, whatsappLink } from '@/lib/site-config';
 
 const principles = [
   { number: '01', title: 'Kenali kebutuhan', text: 'Kami mulai dengan memahami tujuan, kebiasaan, dan tantangan belajar setiap siswa.', tone: 'bg-blue-50 text-primary-700' },
@@ -17,44 +19,81 @@ const faqs = [
   { question: 'Bagaimana cara mengetahui perkembangan belajar?', answer: 'Siswa mendapat pendampingan dan evaluasi rutin agar perkembangan serta materi yang masih perlu diperkuat dapat dibicarakan bersama.' },
 ];
 
-const contactItems = [
-  { label: 'Alamat', value: '', icon: 'M12 21s7-4.4 7-11a7 7 0 1 0-14 0c0 6.6 7 11 7 11Z M12 10a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z' },
-  { label: 'Telepon', value: '', icon: 'M7 3H4a1 1 0 0 0-1 1c0 9.4 7.6 17 17 17a1 1 0 0 0 1-1v-3l-5-2-2 2a14 14 0 0 1-8-8l2-2-1-4Z' },
-  { label: 'Email', value: '', icon: 'M3 5h18v14H3z M3 6l9 7 9-7' },
-];
-
 const fieldClass = 'w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-primary-400 focus:ring-4 focus:ring-primary-100';
 
 export default function ProfilPage() {
   const [openFaq, setOpenFaq] = useState(0);
-  const [form, setForm] = useState({ nama: '', email: '', pesan: '' });
+  const [form, setForm] = useState({ nama: '', kontak: '', pesan: '' });
   const [formError, setFormError] = useState('');
-  const [sent, setSent] = useState(false);
+  const [status, setStatus] = useState(null); // { tone: 'success' | 'info', text, link? }
+  const [sending, setSending] = useState(false);
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    setFormError('');
+  const validateForm = () => {
+    if (!form.nama.trim() || !form.kontak.trim() || !form.pesan.trim()) return 'Nama, kontak, dan pesan perlu diisi.';
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.kontak.trim());
+    const isPhone = form.kontak.replace(/\D/g, '').length >= 9;
+    if (!isEmail && !isPhone) return 'Isi kontak dengan nomor HP/WhatsApp atau email yang valid.';
+    return '';
+  };
 
-    if (!form.nama.trim() || !form.email.trim() || !form.pesan.trim()) {
-      setFormError('Nama, email, dan pesan perlu diisi.');
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      setFormError('Masukkan alamat email yang valid.');
-      return;
-    }
+  const composeText = () => `Halo ${SITE.name}, saya ${form.nama.trim()}.\n\n${form.pesan.trim()}\n\nKontak saya: ${form.kontak.trim()}`;
 
+  const saveLocal = (channel) => {
     try {
       const messages = readStoredRecords(CONTACT_MESSAGES_STORAGE_KEY, []);
       saveStoredRecords(CONTACT_MESSAGES_STORAGE_KEY, [
-        { ...form, id: `contact-${Date.now()}`, tanggal: new Date().toISOString().slice(0, 10) },
+        { ...form, channel, id: `contact-${Date.now()}`, tanggal: new Date().toISOString().slice(0, 10) },
         ...messages,
       ]);
-      setSent(true);
-      setForm({ nama: '', email: '', pesan: '' });
     } catch (error) {
       console.error('Pesan kontak tidak dapat disimpan di perangkat ini.', error);
-      setFormError('Pesan belum tersimpan. Silakan coba kembali.');
+    }
+  };
+
+  // Membuka WhatsApp admin dengan pesan yang sudah terisi otomatis.
+  const sendViaWhatsApp = () => {
+    setFormError('');
+    setStatus(null);
+    const error = validateForm();
+    if (error) return setFormError(error);
+    const link = whatsappLink(composeText());
+    if (!link) return setFormError('Nomor WhatsApp admin belum diatur.');
+    saveLocal('whatsapp');
+    window.open(link, '_blank', 'noopener,noreferrer');
+    setStatus({ tone: 'success', text: 'WhatsApp dibuka di tab baru. Tekan "Kirim" di WhatsApp untuk mengirim pesan Anda.' });
+  };
+
+  // Meneruskan pesan ke admin lewat bot Telegram (route /api/kontak).
+  const sendViaTelegram = async (event) => {
+    event.preventDefault();
+    setFormError('');
+    setStatus(null);
+    const error = validateForm();
+    if (error) return setFormError(error);
+
+    setSending(true);
+    try {
+      const response = await fetch('/api/kontak', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...form, website: event.currentTarget.website?.value || '' }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (response.ok && result.ok) {
+        saveLocal('telegram');
+        setStatus({ tone: 'success', text: 'Pesan terkirim ke admin melalui Telegram. Kami akan segera menghubungi Anda.' });
+        setForm({ nama: '', kontak: '', pesan: '' });
+      } else if (result.configured === false && hasTelegram) {
+        saveLocal('telegram-manual');
+        setStatus({ tone: 'info', text: 'Bot Telegram belum aktif. Silakan lanjutkan chat langsung ke admin kami di Telegram.', link: telegramLink() });
+      } else {
+        setFormError(result.error || 'Pesan belum terkirim. Silakan coba lagi atau gunakan WhatsApp.');
+      }
+    } catch (err) {
+      console.error(err);
+      setFormError('Koneksi bermasalah. Silakan coba lagi atau gunakan WhatsApp.');
+    } finally {
+      setSending(false);
     }
   };
 
@@ -101,77 +140,110 @@ export default function ProfilPage() {
           <div className="max-w-2xl">
             <span className="text-xs font-bold tracking-[0.18em] text-primary-700 uppercase">Kami siap membantu</span>
             <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">Mari terhubung.</h2>
-            <p className="mt-3 text-sm leading-6 text-slate-500 sm:text-base">Hubungi kami atau kirim pertanyaan tentang program dan kebutuhan belajar.</p>
+            <p className="mt-3 text-sm leading-6 text-slate-500 sm:text-base">Chat langsung dengan admin melalui WhatsApp atau Telegram, atau tinggalkan pesan dan kami akan menghubungi Anda.</p>
           </div>
 
-          <div className="mt-8 grid items-stretch gap-5 lg:grid-cols-[0.9fr_1.1fr]">
-            <div className="space-y-5">
+          <div className="mt-8 grid gap-4 sm:grid-cols-2">
+            <ChannelCard
+              href={hasWhatsApp ? whatsappLink(`Halo ${SITE.name}, saya ingin bertanya tentang program bimbingan belajar.`) : ''}
+              icon={<WhatsAppIcon className="h-6 w-6" />}
+              iconClass="bg-[#25D366] text-white shadow-lg shadow-emerald-600/25"
+              title="WhatsApp"
+              detail={hasWhatsApp ? formatPhone(SITE.whatsapp) : 'Nomor belum diatur'}
+              cta="Chat sekarang"
+              accent="hover:border-emerald-300 hover:shadow-emerald-900/10"
+              ctaClass="text-emerald-700"
+            />
+            <ChannelCard
+              href={hasTelegram ? telegramLink() : ''}
+              icon={<TelegramIcon className="h-6 w-6" />}
+              iconClass="bg-[#229ED9] text-white shadow-lg shadow-sky-600/25"
+              title="Telegram"
+              detail={hasTelegram ? `@${SITE.telegram}` : 'Username belum diatur'}
+              cta="Buka Telegram"
+              accent="hover:border-sky-300 hover:shadow-sky-900/10"
+              ctaClass="text-sky-700"
+            />
+          </div>
+
+          <div className="mt-5 grid items-stretch gap-5 lg:grid-cols-[1.05fr_0.95fr]">
+            <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7" aria-labelledby="send-message-heading">
+              <div className="border-b border-slate-100 pb-4">
+                <h3 id="send-message-heading" className="text-lg font-bold text-slate-900">Kirim pesan</h3>
+                <p className="mt-1 text-xs leading-5 text-slate-500">Pilih cara kirim: buka WhatsApp, atau teruskan otomatis ke admin via Telegram.</p>
+              </div>
+
+              {status && (
+                <div role="status" className={`mt-4 rounded-2xl border px-4 py-3 text-sm leading-6 ${status.tone === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-sky-200 bg-sky-50 text-sky-800'}`}>
+                  {status.text}
+                  {status.link && <a href={status.link} target="_blank" rel="noopener noreferrer" className="ml-1 font-semibold underline underline-offset-2">Buka Telegram →</a>}
+                </div>
+              )}
+              {formError && <p role="alert" className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{formError}</p>}
+
+              <form onSubmit={sendViaTelegram} className="mt-5 space-y-4" noValidate>
+                <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="block">
+                    <span className="mb-1.5 block text-xs font-semibold text-slate-700">Nama lengkap</span>
+                    <input value={form.nama} onChange={(event) => setForm({ ...form, nama: event.target.value })} autoComplete="name" maxLength={100} className={fieldClass} placeholder="Masukkan nama Anda" />
+                  </label>
+                  <label className="block">
+                    <span className="mb-1.5 block text-xs font-semibold text-slate-700">No. WhatsApp / email</span>
+                    <input value={form.kontak} onChange={(event) => setForm({ ...form, kontak: event.target.value })} autoComplete="tel" maxLength={100} className={fieldClass} placeholder="08xx atau nama@email.com" />
+                  </label>
+                </div>
+                <label className="block">
+                  <span className="mb-1.5 flex items-center justify-between text-xs font-semibold text-slate-700">Pesan <span className="font-normal text-slate-400">{form.pesan.length}/2000</span></span>
+                  <textarea value={form.pesan} onChange={(event) => setForm({ ...form, pesan: event.target.value })} rows={5} maxLength={2000} className={`${fieldClass} resize-y`} placeholder="Contoh: Saya ingin tahu jadwal kelas SMP untuk anak saya..." />
+                </label>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <button type="button" onClick={sendViaWhatsApp} disabled={!hasWhatsApp} className="inline-flex items-center justify-center gap-2 rounded-full bg-[#25D366] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition hover:-translate-y-0.5 hover:bg-[#1ebe5b] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0">
+                    <WhatsAppIcon /> Kirim via WhatsApp
+                  </button>
+                  <button type="submit" disabled={sending} className="inline-flex items-center justify-center gap-2 rounded-full bg-[#229ED9] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-600/20 transition hover:-translate-y-0.5 hover:bg-[#1c8cc2] disabled:cursor-wait disabled:opacity-70 disabled:hover:translate-y-0">
+                    {sending ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" aria-hidden="true" /> : <TelegramIcon />}
+                    {sending ? 'Mengirim...' : 'Kirim via Telegram'}
+                  </button>
+                </div>
+                <p className="text-center text-[11px] leading-5 text-slate-400">Data Anda hanya dipakai untuk membalas pertanyaan ini.</p>
+              </form>
+            </section>
+
+            <div className="flex flex-col gap-5">
               <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6" aria-labelledby="contact-information-heading">
-                <h3 id="contact-information-heading" className="border-b border-slate-200 pb-3 text-base font-bold text-slate-900">Informasi kontak</h3>
-                <div className="mt-4 space-y-4">
-                  {contactItems.map((item) => (
-                    <div key={item.label} className="flex items-start gap-3">
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-primary-700">
-                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={item.icon} /></svg>
-                      </span>
-                      <div>
-                        <p className="text-[11px] font-bold tracking-wide text-slate-500 uppercase">{item.label}</p>
-                        {item.value ? <p className="mt-1 text-sm text-slate-700">{item.value}</p> : <p className="mt-1 text-sm italic text-slate-400">Belum diisi</p>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-5 border-t border-slate-100 pt-4">
-                  <p className="text-xs leading-5 text-slate-400">Informasi alamat, telepon, dan email dapat dilengkapi di halaman ini.</p>
-                </div>
+                <h3 id="contact-information-heading" className="text-base font-bold text-slate-900">Informasi kontak</h3>
+                <ul className="mt-4 space-y-4">
+                  <InfoRow icon={<PinIcon className="h-4 w-4" />} label="Alamat" value={SITE.address} />
+                  <InfoRow icon={<MailIcon className="h-4 w-4" />} label="Email" value={SITE.email} href={SITE.email ? `mailto:${SITE.email}` : ''} />
+                  <InfoRow icon={<ClockIcon className="h-4 w-4" />} label="Jam operasional" value={SITE.hours} />
+                </ul>
               </section>
 
-              <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6" aria-labelledby="send-message-heading">
-                <h3 id="send-message-heading" className="border-b border-slate-200 pb-3 text-base font-bold text-slate-900">Kirim pesan</h3>
-                {sent && <p role="status" className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-xs leading-5 text-emerald-800">Pesan tersimpan di browser ini sebagai demo; pesan belum dikirim ke server.</p>}
-                {formError && <p role="alert" className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2.5 text-xs text-rose-700">{formError}</p>}
-                <form onSubmit={handleSubmit} className="mt-4 space-y-3" noValidate>
-                  <label className="block">
-                    <span className="mb-1.5 block text-[10px] font-bold tracking-wide text-slate-600 uppercase">Nama lengkap</span>
-                    <input value={form.nama} onChange={(event) => setForm({ ...form, nama: event.target.value })} autoComplete="name" className={fieldClass} placeholder="Masukkan nama Anda" />
-                  </label>
-                  <label className="block">
-                    <span className="mb-1.5 block text-[10px] font-bold tracking-wide text-slate-600 uppercase">Email</span>
-                    <input type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} autoComplete="email" className={fieldClass} placeholder="nama@email.com" />
-                  </label>
-                  <label className="block">
-                    <span className="mb-1.5 block text-[10px] font-bold tracking-wide text-slate-600 uppercase">Pesan</span>
-                    <textarea value={form.pesan} onChange={(event) => setForm({ ...form, pesan: event.target.value })} rows={4} className={`${fieldClass} resize-y`} placeholder="Tulis pesan Anda di sini..." />
-                  </label>
-                  <button type="submit" className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary-700 px-5 py-3 text-xs font-bold tracking-wide text-white transition hover:bg-primary-800">Kirim pesan <span aria-hidden="true">→</span></button>
-                  <p className="text-center text-[10px] leading-4 text-slate-400">Formulir ini masih dalam mode demo lokal.</p>
-                </form>
+              <section className="flex min-h-[280px] flex-1 flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm" aria-labelledby="location-heading">
+                <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-5 py-4">
+                  <h3 id="location-heading" className="flex items-center gap-2 text-sm font-bold text-slate-900"><PinIcon className="h-4 w-4 text-primary-700" /> Lokasi kami</h3>
+                  {SITE.address && <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(SITE.address)}`} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-primary-700 hover:text-primary-900">Buka di Maps ↗</a>}
+                </div>
+                {SITE.mapsEmbedUrl ? (
+                  <iframe title={`Peta lokasi ${SITE.name}`} src={SITE.mapsEmbedUrl} className="min-h-[240px] w-full flex-1 border-0" loading="lazy" referrerPolicy="no-referrer-when-downgrade" allowFullScreen />
+                ) : (
+                  <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-[#eef4f1] p-8">
+                    <div className="absolute inset-0 opacity-60" aria-hidden="true">
+                      <div className="absolute -left-10 top-10 h-5 w-[120%] rotate-[14deg] border-y-8 border-white" />
+                      <div className="absolute left-[30%] -top-12 h-[140%] w-5 rotate-[24deg] border-x-8 border-white" />
+                      <div className="absolute right-[18%] -top-1/4 h-[150%] w-4 -rotate-[38deg] border-x-8 border-white" />
+                      <div className="absolute bottom-[18%] left-[12%] h-12 w-24 rounded-2xl bg-emerald-100" />
+                    </div>
+                    <div className="relative max-w-xs rounded-2xl border border-white bg-white/90 p-5 text-center shadow-lg shadow-slate-900/10 backdrop-blur">
+                      <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-primary-50 text-primary-700"><PinIcon /></span>
+                      <p className="mt-3 text-sm font-bold text-slate-900">Peta lokasi</p>
+                      <p className="mt-1 text-xs leading-5 text-slate-500">Peta akan tampil setelah alamat resmi ditambahkan.</p>
+                    </div>
+                  </div>
+                )}
               </section>
             </div>
-
-            <section className="flex min-h-[360px] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm lg:min-h-full" aria-labelledby="location-heading">
-              <div className="flex items-center gap-2 bg-slate-950 px-5 py-4 text-white">
-                <svg className="h-4 w-4 text-secondary-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M3 6h5v12H3zM8 8h6v10H8zM14 5h7v13h-7z" /></svg>
-                <h3 id="location-heading" className="text-xs font-bold tracking-[0.14em] uppercase">Lokasi kami</h3>
-              </div>
-              <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-[#eef4f1] p-8">
-                <div className="absolute inset-0 opacity-60" aria-hidden="true">
-                  <div className="absolute -left-10 top-16 h-5 w-[120%] rotate-[18deg] border-y-8 border-white bg-transparent" />
-                  <div className="absolute left-[28%] -top-12 h-[140%] w-5 rotate-[24deg] border-x-8 border-white bg-transparent" />
-                  <div className="absolute right-[18%] top-[-20%] h-[140%] w-4 rotate-[-38deg] border-x-8 border-white bg-transparent" />
-                  <div className="absolute bottom-[20%] left-[-10%] h-4 w-[120%] rotate-[-12deg] border-y-8 border-white bg-transparent" />
-                  <div className="absolute left-[14%] top-[22%] h-10 w-20 rounded-full bg-emerald-100" />
-                  <div className="absolute bottom-[18%] right-[14%] h-14 w-24 rounded-2xl bg-emerald-100" />
-                </div>
-                <div className="relative max-w-sm rounded-3xl border border-white bg-white/90 p-7 text-center shadow-xl shadow-slate-900/10 backdrop-blur">
-                  <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-50 text-primary-700">
-                    <svg className="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z" /><circle cx="12" cy="10" r="2.5" /></svg>
-                  </span>
-                  <h4 className="mt-4 text-base font-bold text-slate-900">Peta lokasi</h4>
-                  <p className="mt-2 text-sm leading-6 text-slate-500">Peta akan ditampilkan setelah alamat resmi Bimble Wanda ditambahkan.</p>
-                </div>
-              </div>
-            </section>
           </div>
         </div>
       </section>
@@ -215,5 +287,37 @@ export default function ProfilPage() {
         </div>
       </section>
     </PublicLayout>
+  );
+}
+
+function ChannelCard({ href, icon, iconClass, title, detail, cta, accent, ctaClass }) {
+  const content = (
+    <>
+      <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${iconClass}`}>{icon}</span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-base font-bold text-slate-900">{title}</span>
+        <span className="mt-0.5 block truncate text-sm text-slate-500">{detail}</span>
+      </span>
+      {href && <span className={`hidden shrink-0 text-sm font-semibold sm:inline ${ctaClass}`}>{cta} →</span>}
+    </>
+  );
+  const base = 'flex items-center gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition';
+  if (!href) return <div className={`${base} opacity-70`}>{content}</div>;
+  return <a href={href} target="_blank" rel="noopener noreferrer" className={`${base} hover:-translate-y-0.5 hover:shadow-xl ${accent}`}>{content}</a>;
+}
+
+function InfoRow({ icon, label, value, href }) {
+  return (
+    <li className="flex items-start gap-3">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-primary-700">{icon}</span>
+      <div className="min-w-0">
+        <p className="text-[11px] font-bold tracking-wide text-slate-500 uppercase">{label}</p>
+        {value ? (
+          href ? <a href={href} className="mt-0.5 block break-words text-sm text-slate-700 hover:text-primary-700">{value}</a> : <p className="mt-0.5 text-sm text-slate-700">{value}</p>
+        ) : (
+          <p className="mt-0.5 text-sm italic text-slate-400">Belum diisi</p>
+        )}
+      </div>
+    </li>
   );
 }

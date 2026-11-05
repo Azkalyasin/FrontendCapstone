@@ -3,13 +3,14 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import PublicLayout from '@/components/layout/PublicLayout';
+import { AwardIcon, TeacherIcon, TrendIcon, UsersIcon } from '@/components/ui/Icons';
 import { DEFAULT_PROGRAMS, readStoredRecords, PROGRAMS_STORAGE_KEY, formatRupiah } from '@/lib/demo-data';
 
 const highlights = [
-  { value: '95%', label: 'lulus PTN', icon: '↗', tone: 'bg-blue-50 text-blue-700' },
-  { value: '500+', label: 'siswa aktif', icon: '✦', tone: 'bg-amber-50 text-amber-700' },
-  { value: '50+', label: 'tutor ahli', icon: '◎', tone: 'bg-emerald-50 text-emerald-700' },
-  { value: '10 th', label: 'pengalaman', icon: '⌁', tone: 'bg-violet-50 text-violet-700' },
+  { value: '95%', label: 'lulus PTN', Icon: TrendIcon, tone: 'bg-blue-500/15 text-blue-300' },
+  { value: '500+', label: 'siswa aktif', Icon: UsersIcon, tone: 'bg-amber-500/15 text-amber-300' },
+  { value: '50+', label: 'tutor ahli', Icon: TeacherIcon, tone: 'bg-emerald-500/15 text-emerald-300' },
+  { value: '10 th', label: 'pengalaman', Icon: AwardIcon, tone: 'bg-violet-500/15 text-violet-300' },
 ];
 
 export default function HomePage() {
@@ -36,7 +37,7 @@ export default function HomePage() {
             </div>
             <h1 className="mt-6 max-w-2xl text-4xl font-bold leading-[1.1] tracking-tight text-slate-950 sm:text-5xl lg:text-[3.6rem]">
               Belajar lebih yakin,
-              <span className="mt-1 block text-primary-700">berprestasi tanpa ragu.</span>
+              <span className="mt-1 block bg-gradient-to-r from-primary-700 to-indigo-600 bg-clip-text text-transparent">berprestasi tanpa&nbsp;ragu.</span>
             </h1>
             <p className="mt-6 max-w-xl text-base leading-7 text-slate-600 sm:text-lg sm:leading-8">
               Pendampingan belajar yang hangat, tutor yang peduli, dan langkah belajar yang disesuaikan dengan potensi setiap siswa.
@@ -106,11 +107,11 @@ export default function HomePage() {
         </div>
         <div className="mt-9 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {programs.slice(0, 4).map((program, index) => (
-            <article key={program.id} className="group rounded-3xl border border-slate-200 bg-white p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary-200 hover:shadow-xl hover:shadow-primary-900/5">
+            <article key={program.id} className="group flex flex-col rounded-3xl border border-slate-200 bg-white p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary-200 hover:shadow-xl hover:shadow-primary-900/5">
               <div className={`flex h-12 w-12 items-center justify-center rounded-2xl text-sm font-bold ${['bg-blue-50 text-primary-700', 'bg-amber-50 text-amber-700', 'bg-violet-50 text-violet-700', 'bg-emerald-50 text-emerald-700'][index % 4]}`}>0{index + 1}</div>
               <p className="mt-5 text-xs font-semibold text-primary-700">{program.tingkat || program.jenjang}</p>
               <h3 className="mt-2 text-lg font-bold text-slate-900">{program.nama}</h3>
-              <p className="mt-2 min-h-[60px] text-sm leading-5 text-slate-500">{program.deskripsi}</p>
+              <p className="mt-2 line-clamp-3 flex-1 text-sm leading-6 text-slate-500">{program.deskripsi}</p>
               <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4">
                 <span className="text-sm font-bold text-slate-900">{formatRupiah(program.biaya)}<span className="font-normal text-slate-400">/bln</span></span>
                 <Link href="/program" className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-50 text-slate-600 transition group-hover:bg-primary-700 group-hover:text-white" aria-label={`Lihat ${program.nama}`}>↗</Link>
@@ -124,7 +125,7 @@ export default function HomePage() {
         <div className="mx-auto grid max-w-7xl gap-8 px-5 sm:px-8 md:grid-cols-4">
           {highlights.map((item) => (
             <div key={item.label} className="flex items-center gap-4 border-b border-white/10 pb-5 last:border-0 last:pb-0 md:border-b-0 md:border-r md:pb-0 md:last:border-0">
-              <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-xl font-bold ${item.tone}`}>{item.icon}</span>
+              <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ring-1 ring-white/10 ${item.tone}`}><item.Icon className="h-6 w-6" /></span>
               <div><p className="text-2xl font-bold tracking-tight">{item.value}</p><p className="mt-1 text-xs font-medium text-slate-400 uppercase">{item.label}</p></div>
             </div>
           ))}
@@ -156,7 +157,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20">
+      <section className="mx-auto max-w-7xl px-5 pb-16 sm:px-8 sm:pb-20">
         <div className="grid items-center gap-10 rounded-[2rem] bg-gradient-to-r from-amber-50 via-orange-50 to-primary-50 p-7 sm:p-10 lg:grid-cols-[1fr_auto] lg:p-12">
           <div>
             <span className="text-xs font-bold tracking-[0.18em] text-amber-700 uppercase">Kisah yang menginspirasi</span>

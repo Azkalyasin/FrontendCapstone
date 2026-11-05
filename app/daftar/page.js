@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import PublicLayout from '@/components/layout/PublicLayout';
+import { TelegramIcon, WhatsAppIcon } from '@/components/ui/Icons';
+import { SITE, hasTelegram, hasWhatsApp, telegramLink, whatsappLink } from '@/lib/site-config';
 import { DEFAULT_PROGRAMS, DEFAULT_REGISTRATIONS, PROGRAMS_STORAGE_KEY, REGISTRATIONS_STORAGE_KEY, readStoredRecords, saveStoredRecords } from '@/lib/demo-data';
 
 const initialForm = {
@@ -16,6 +18,22 @@ const initialForm = {
   jenjang: '',
   program: '',
 };
+
+function confirmationText(form) {
+  return [
+    `Halo ${SITE.name}, saya ingin konfirmasi pendaftaran online:`,
+    '',
+    `Nama: ${form.nama}`,
+    `TTL: ${form.tempatLahir}, ${form.tanggalLahir}`,
+    `Jenis kelamin: ${form.jenisKelamin}`,
+    `Orang tua/wali: ${form.namaOrangTua}`,
+    `No. HP: ${form.telepon}`,
+    `Jenjang/Program: ${form.jenjang} — ${form.program}`,
+    `Alamat: ${form.alamat}`,
+    '',
+    'Terima kasih.',
+  ].join('\n');
+}
 
 const inputClass = 'w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-primary-400 focus:ring-4 focus:ring-primary-100';
 
@@ -73,6 +91,12 @@ export default function DaftarPage() {
       };
       saveStoredRecords(REGISTRATIONS_STORAGE_KEY, [newRegistration, ...registrations]);
       setSubmitted(true);
+      // Notifikasi ke admin via bot Telegram (tidak menghalangi alur jika belum dikonfigurasi).
+      fetch('/api/kontak', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'pendaftaran', data: form }),
+      }).catch(() => {});
     } catch (error) {
       console.error('Pendaftaran tidak dapat disimpan di perangkat ini.', error);
       setMessage('Pendaftaran belum tersimpan. Coba kembali atau gunakan browser lain.');
@@ -87,8 +111,20 @@ export default function DaftarPage() {
             <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-emerald-100 text-3xl text-emerald-700" aria-hidden="true">✓</span>
             <p className="mt-6 text-xs font-bold tracking-[0.18em] text-emerald-700 uppercase">Pendaftaran diterima</p>
             <h1 className="mt-3 text-3xl font-bold text-slate-950">Terima kasih, {form.nama.split(' ')[0]}!</h1>
-            <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-slate-600">Data pendaftaran sudah tersimpan di browser ini sebagai demo. Pilihan tingkat pendidikan: <span className="font-semibold text-slate-800">{form.jenjang}</span>.</p>
+            <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-slate-600">Data pendaftaran untuk program <span className="font-semibold text-slate-800">{form.program}</span> ({form.jenjang}) sudah kami terima. {hasWhatsApp ? 'Konfirmasikan pendaftaran via WhatsApp agar admin dapat segera memproses.' : 'Admin kami akan segera menghubungi Anda.'}</p>
             <div className="mt-7 flex flex-wrap justify-center gap-3">
+              {hasWhatsApp && (
+                <a href={whatsappLink(confirmationText(form))} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full bg-[#25D366] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-[#1ebe5b]">
+                  <WhatsAppIcon /> Konfirmasi via WhatsApp
+                </a>
+              )}
+              {hasTelegram && (
+                <a href={telegramLink()} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full bg-[#229ED9] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-600/20 transition hover:bg-[#1c8cc2]">
+                  <TelegramIcon /> Chat via Telegram
+                </a>
+              )}
+            </div>
+            <div className="mt-3 flex flex-wrap justify-center gap-3">
               <Link href="/program" className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">Jelajahi program</Link>
               <Link href="/" className="rounded-full bg-primary-700 px-5 py-3 text-sm font-semibold text-white hover:bg-primary-800">Kembali ke beranda</Link>
             </div>
@@ -178,7 +214,7 @@ export default function DaftarPage() {
               <Link href="/" className="inline-flex items-center justify-center rounded-full border border-slate-200 px-6 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">Batal</Link>
               <button type="submit" className="inline-flex items-center justify-center gap-2 rounded-full bg-primary-700 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-primary-700/15 transition hover:-translate-y-0.5 hover:bg-primary-800">Daftar sekarang <span aria-hidden="true">→</span></button>
             </div>
-            <p className="mt-4 text-center text-[11px] leading-5 text-slate-400">Data pendaftaran tersimpan secara lokal di browser ini untuk demo dan belum dikirim ke server.</p>
+            <p className="mt-4 text-center text-[11px] leading-5 text-slate-400">Setelah mendaftar, Anda dapat langsung mengonfirmasi ke admin via WhatsApp atau Telegram.</p>
           </form>
         </div>
       </section>
