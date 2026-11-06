@@ -35,13 +35,10 @@ export function AdminSidebar({ mobileOpen = false, onNavigate = () => {}, onLogo
     <aside className={`${mobileOpen ? 'fixed inset-y-0 left-0 z-50 flex w-[260px] shadow-2xl' : 'hidden'} min-h-screen flex-col border-r border-slate-200 bg-[#f8fbff] md:sticky md:top-0 md:z-auto md:flex md:h-screen md:w-[210px] md:shrink-0 md:shadow-none`}>
       <div className="border-b border-slate-200 px-5 py-5">
         <div className="flex items-center gap-3">
-          <div className="relative h-8 w-8 shrink-0 border border-primary-300 bg-primary-50" aria-hidden="true">
-            <span className="absolute left-1/2 top-1/2 h-[1px] w-8 -translate-x-1/2 -translate-y-1/2 rotate-45 bg-primary-600" />
-            <span className="absolute left-1/2 top-1/2 h-[1px] w-8 -translate-x-1/2 -translate-y-1/2 -rotate-45 bg-primary-600" />
-          </div>
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-700 text-xs font-black text-white shadow-md shadow-primary-700/20" aria-hidden="true">BW</span>
           <div>
             <h1 className="text-sm font-semibold leading-tight text-slate-900">Bimble Wanda</h1>
-            <p className="text-[10px] leading-tight text-slate-500">Tutoring Admin</p>
+            <p className="text-[10px] leading-tight text-slate-500">Panel admin</p>
           </div>
           <button type="button" onClick={onNavigate} className="ml-auto flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 md:hidden" aria-label="Tutup navigasi">×</button>
         </div>
@@ -55,7 +52,7 @@ export function AdminSidebar({ mobileOpen = false, onNavigate = () => {}, onLogo
                 href={item.href}
                 onClick={onNavigate}
                 className={`
-                  flex items-center gap-2 px-2 py-2 text-xs transition-colors
+                  flex items-center gap-2 rounded-xl px-3 py-2.5 text-xs transition-colors
                   ${isActive(item.href)
                     ? 'bg-primary-700 text-white'
                     : 'text-slate-700 hover:bg-primary-50 hover:text-primary-800'
@@ -82,7 +79,7 @@ export function AdminSidebar({ mobileOpen = false, onNavigate = () => {}, onLogo
         <button
           type="button"
           onClick={() => { onNavigate(); onLogout(); }}
-          className="flex w-full items-center gap-2 px-2 py-2 text-xs text-slate-700 transition-colors hover:bg-rose-50 hover:text-rose-700"
+          className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-xs text-slate-700 transition-colors hover:bg-rose-50 hover:text-rose-700"
         >
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" aria-hidden="true">
             <path d="M10 17l5-5-5-5m5 5H3m9-9h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7" />
