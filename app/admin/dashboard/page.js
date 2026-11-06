@@ -29,14 +29,15 @@ export default function AdminDashboardPage() {
   const [today, setToday] = useState(null);
 
   useEffect(() => {
-    setToday(new Date());
     Promise.all([getAllPendaftar(), getAllPrograms(), getAllAchievements()])
       .then(([pendaftar, programList, achievementList]) => {
         setRegistrations(pendaftar);
         setPrograms(programList);
         setAchievements(achievementList);
       })
-      .catch((error) => setLoadError(`Beberapa data dashboard tidak dapat dimuat: ${error.message}`));
+      .catch((error) => setLoadError(`Beberapa data dashboard tidak dapat dimuat: ${error.message}`))
+      // Tanggal "hari ini" diambil di browser setelah data dimuat (bukan saat prerender).
+      .finally(() => setToday(new Date()));
   }, []);
 
   const recentRegistrations = useMemo(() => {
